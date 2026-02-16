@@ -1,3 +1,4 @@
+#include "calc.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
@@ -7,87 +8,120 @@
 #include <SDL3/SDL_oldnames.h>
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_render.h>
+#include <SDL3/SDL_scancode.h>
+#include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_surface.h>
+#include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
-#include <array>
 #include <cstddef>
+#include <tuple>
+#include <vector>
 
 #define windowWidth 800
 #define windowHeight 600
+#define playerSpeed 0.1f
+#define fov 30.0f
 
-SDL_Vertex newVertex(int x, int y, float r, float g, float b) {
-  SDL_Vertex newVertex{};
-  newVertex.position.x = x;
-  newVertex.position.y = y;
-  newVertex.color.a = 1.0f;
-  newVertex.color.r = r;
-  newVertex.color.g = g;
-  newVertex.color.b = b;
+namespace Matrix {};
 
-  return newVertex;
-}
+std::vector<SDL_Vertex>
+ProjectToScreen(const std::vector<std::tuple<float, float, float>> &vertices,
+                float camX, float camY, float camZ) {
+  std::vector<SDL_Vertex> result;
 
-class Surface {
-public:
-  int numVertices;
-  SDL_Vertex vertices[3];
-  int indices[3];
-  int numIndices;
+  for (const auto &[x, y, z] : vertices) {
+    float dz = z - camZ;
 
-  Surface() {
-    this->numVertices = 3;
-    this->vertices[0] = newVertex(windowWidth / 2, 0, 0.0f, 1.0f, 0.0f);
-    this->vertices[1] = newVertex(0, windowHeight, 1.0f, 0.0f, 0.0f);
-    this->vertices[2] = newVertex(windowWidth, windowHeight, 0.0f, 0.0f, 1.0f);
-    this->indices[0] = 0;
-    this->indices[1] = 1;
-    this->indices[2] = 2;
-    this->numIndices = 3;
-  }
-
-  std::array<SDL_Vertex, 3> getOffset(int x, int y) {
-    std::array<SDL_Vertex, 3> newVertices = {vertices[0], vertices[1],
-                                             vertices[2]};
-
-    for (SDL_Vertex &vertex : newVertices) {
-      vertex.position.x -= x;
-      vertex.position.y += y;
+    if (dz >= 0.0f) {
+      continue;
     }
 
-    return newVertices;
+    float dx = (x - camX) / -dz;
+    float dy = (y - camY) / -dz;
+
+    SDL_Vertex newVertex = {};
+
+    newVertex.position.x = dx * fov + windowWidth * 0.5f;
+    newVertex.position.y = -dy * fov + windowHeight * 0.5f;
+    newVertex.color.a = 1.0f;
+    newVertex.color.r = 1.0f;
+    newVertex.color.g = 1.0f;
+    newVertex.color.b = 1.0f;
+
+    result.push_back(newVertex);
+  }
+
+  return result;
+}
+
+class GameObject {
+public:
+  float x;
+  float y;
+  float z;
+  std::vector<std::tuple<float, float, float>> vertices;
+  std::vector<int> indices;
+
+  GameObject(float x, float y, float z) {
+    this->x = x;
+    this->y = y;
+    this->z = z;
+    this->vertices = {
+        {0.0f, 0.0f, 0.0f}, {5.0f, 8.0f, 0.0f}, {10.0f, 0.0f, 0.0f}};
+    this->indices = {0, 1, 2};
+  }
+
+  void render(int cameraX, int cameraY, int cameraZ, SDL_Renderer *renderer) {
+    auto tmp = ProjectToScreen(this->vertices, cameraX, cameraY, cameraZ);
+    SDL_RenderGeometry(renderer, nullptr, tmp.data(), tmp.size(), nullptr,
+                       tmp.size());
   }
 };
 
 class Player {
 public:
-  int x;
-  int y;
-  int z;
+  float x;
+  float y;
+  float z;
 
-  Player(int x, int y, int z) {
+  Player(float x, float y, float z) {
     this->x = x;
     this->y = y;
     this->z = z;
   }
 };
 
+Uint64 lastCheck = SDL_GetPerformanceCounter();
+
 void getPlayerInput(Player *player) {
   const bool *key_states = SDL_GetKeyboardState(nullptr);
+  Uint64 t = SDL_GetPerformanceCounter();
+  float dt =
+      static_cast<float>(t - lastCheck) * 1000 / SDL_GetPerformanceFrequency();
+  lastCheck = t;
 
   if (key_states[SDL_SCANCODE_W]) {
-    player->y += 1;
+    player->z -= playerSpeed * dt;
   }
 
   if (key_states[SDL_SCANCODE_A]) {
-    player->x -= 1;
+    player->x -= playerSpeed * dt;
   }
 
   if (key_states[SDL_SCANCODE_S]) {
-    player->y -= 1;
+    player->z += playerSpeed * dt;
   }
 
   if (key_states[SDL_SCANCODE_D]) {
-    player->x += 1;
+    player->x += playerSpeed * dt;
+  }
+
+  if (key_states[SDL_SCANCODE_SPACE]) {
+    player->y += playerSpeed * dt;
+  }
+
+  if (key_states[SDL_SCANCODE_LSHIFT]) {
+    player->y -= playerSpeed * dt;
   }
 }
 
@@ -113,8 +147,9 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  Surface *surface = new Surface();
-  Player *player = new Player(0, 0, 0);
+  Player *player = new Player(0.0f, 0.0f, 3.0f);
+  std::vector<GameObject> gameObjects = {};
+  gameObjects.push_back({0.0f, 0.0f, 0.0f});
 
   while (!done) {
     SDL_Event event;
@@ -128,9 +163,11 @@ int main(int argc, char *argv[]) {
     getPlayerInput(player);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
-    SDL_RenderGeometry(
-        renderer, nullptr, surface->getOffset(player->x, player->y).data(),
-        surface->numVertices, surface->indices, surface->numIndices);
+
+    for (GameObject &gameObject : gameObjects) {
+      gameObject.render(player->x, player->y, player->z, renderer);
+    }
+
     SDL_RenderPresent(renderer);
   }
 
