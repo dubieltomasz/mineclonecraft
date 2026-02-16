@@ -26,21 +26,29 @@ namespace Matrix {};
 
 std::vector<SDL_Vertex>
 ProjectToScreen(const std::vector<std::tuple<float, float, float>> &vertices,
-                float camX, float camY, float camZ) {
+                float camX, float camY, float camZ, float camRotX,
+                float camRotY) {
   std::vector<SDL_Vertex> result;
 
   for (const auto &[x, y, z] : vertices) {
-    float dz = z - camZ;
+    calc::Vec4 vertexGlobal(x, y, z, 1.0f);
+    calc::Mat4 rotationX = calc::Mat4::MRotationX(camRotX);
+    calc::Mat4 rotationY = calc::Mat4::MRotationY(camRotY);
+    calc::Mat4 translation = calc::Mat4::MIdentity();
+    translation(0, 3) = -camX;
+    translation(1, 3) = -camY;
+    translation(2, 3) = -camZ;
+    calc::Mat4 viewMatrix = (rotationX * rotationY) * translation;
+    calc::Vec4 vertexCamera = viewMatrix * vertexGlobal;
 
-    if (dz >= 0.0f) {
+    if (vertexCamera.z >= 0.0f) {
       continue;
     }
 
-    float dx = (x - camX) / -dz;
-    float dy = (y - camY) / -dz;
+    float dx = (vertexCamera.x) / -vertexCamera.z;
+    float dy = (vertexCamera.y) / -vertexCamera.z;
 
     SDL_Vertex newVertex = {};
-
     newVertex.position.x = dx * fov + windowWidth * 0.5f;
     newVertex.position.y = -dy * fov + windowHeight * 0.5f;
     newVertex.color.a = 1.0f;
@@ -72,7 +80,8 @@ public:
   }
 
   void render(int cameraX, int cameraY, int cameraZ, SDL_Renderer *renderer) {
-    auto tmp = ProjectToScreen(this->vertices, cameraX, cameraY, cameraZ);
+    auto tmp =
+        ProjectToScreen(this->vertices, cameraX, cameraY, cameraZ, 0.0f, 0.0f);
     SDL_RenderGeometry(renderer, nullptr, tmp.data(), tmp.size(), nullptr,
                        tmp.size());
   }

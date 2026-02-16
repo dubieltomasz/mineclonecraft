@@ -57,6 +57,40 @@ public:
   bool operator==(const Vec4 &v) const {
     return this->x == v.x && this->y == v.y && this->z == v.z && this->w == v.w;
   }
+
+  float &operator[](const int index) {
+    switch (index) {
+    case 0:
+      return this->x;
+      break;
+    case 1:
+      return this->y;
+      break;
+    case 2:
+      return this->z;
+      break;
+    default:
+      return this->w;
+      break;
+    }
+  }
+
+  float operator[](const int index) const {
+    switch (index) {
+    case 0:
+      return this->x;
+      break;
+    case 1:
+      return this->y;
+      break;
+    case 2:
+      return this->z;
+      break;
+    default:
+      return this->w;
+      break;
+    }
+  }
 };
 
 class Mat4 {
@@ -123,6 +157,8 @@ public:
     return this->array[row * 4 + col];
   }
 
+  float &operator()(int row, int col) { return this->array[row * 4 + col]; }
+
   Mat4 operator+(const Mat4 &matrix) const {
     Mat4 array(0.0f);
 
@@ -167,6 +203,18 @@ public:
     return array;
   }
 
+  Vec4 operator*(const Vec4 &vector) const {
+    Vec4 result(0.0f);
+
+    for (int i = 0; i < 4; ++i) {
+      for (int j = 0; j < 4; ++j) {
+        result[i] += this->array[i * 4 + j] * vector[j];
+      }
+    }
+
+    return result;
+  }
+
   Mat4 transpose() const {
     Mat4 array(0.0f);
 
@@ -179,6 +227,39 @@ public:
     return array;
   }
 
-  static Mat4 Identity() { return Mat4(1.0f); }
+  static Mat4 MIdentity() { return Mat4(1.0f); }
+
+  static Mat4 MRotationX(float theta) {
+    Mat4 matrix(1.0f);
+
+    matrix[5] = std::cos(theta);
+    matrix[6] = -std::sin(theta);
+    matrix[9] = std::sin(theta);
+    matrix[10] = std::cos(theta);
+
+    return matrix;
+  }
+
+  static Mat4 MRotationY(float theta) {
+    Mat4 matrix(1.0f);
+
+    matrix[0] = std::cos(theta);
+    matrix[3] = std::sin(theta);
+    matrix[8] = -std::sin(theta);
+    matrix[10] = std::cos(theta);
+
+    return matrix;
+  }
+
+  static Mat4 MRotationZ(float theta) {
+    Mat4 matrix(1.0f);
+
+    matrix[0] = std::cos(theta);
+    matrix[1] = -std::sin(theta);
+    matrix[4] = std::sin(theta);
+    matrix[5] = std::cos(theta);
+
+    return matrix;
+  }
 };
 } // namespace calc
