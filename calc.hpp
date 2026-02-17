@@ -244,7 +244,7 @@ public:
     Mat4 matrix(1.0f);
 
     matrix[0] = std::cos(theta);
-    matrix[3] = std::sin(theta);
+    matrix[2] = std::sin(theta);
     matrix[8] = -std::sin(theta);
     matrix[10] = std::cos(theta);
 
