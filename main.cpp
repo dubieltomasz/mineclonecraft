@@ -25,8 +25,6 @@
 #define fov 90.0f
 #define sensitivity 0.05f
 
-namespace Matrix {};
-
 class Color {
 public:
   float r, g, b;
@@ -188,7 +186,8 @@ int main(int argc, char *argv[]) {
   SDL_CaptureMouse(true);
 
   Player *player = new Player(0.0f, 0.0f, 10.0f);
-  std::vector<GameObject> gameObjects = {};
+  std::vector<GameObject> gameObjects;
+
   // top
   gameObjects.push_back(
       {0.0f, 5.0f, 0.0f, 5.0f, 5.0f, 0.0f, 5.0f, 5.0f, 5.0f, Color::Cyan()});
