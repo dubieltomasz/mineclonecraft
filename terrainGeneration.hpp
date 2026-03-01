@@ -90,7 +90,7 @@ float noise(float x, float y, const std::array<Vec2, 256> &vectors) {
                    smoothstep(y - y0));
 }
 } // namespace terrainGeneration
-
+/*
 constexpr std::string gra[5] = {" ", "░", "▒", "▓", "█"};
 
 int main() {
@@ -103,4 +103,4 @@ int main() {
     }
     std::print("\n");
   }
-}
+}*/

@@ -1,4 +1,5 @@
 #include "calc.hpp"
+#include "terrainGeneration.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_keyboard.h>
@@ -16,6 +17,7 @@
 #include <SDL3/SDL_video.h>
 #include <cmath>
 #include <cstddef>
+#include <numeric>
 #include <tuple>
 #include <vector>
 
@@ -87,11 +89,13 @@ ProjectToScreen(const std::vector<std::tuple<float, float, float>> &vertices,
 class GameObject {
 public:
   std::vector<std::tuple<float, float, float>> vertices;
+  int normal;
   float r, b, g;
 
   GameObject(float x1, float y1, float z1, float x2, float y2, float z2,
              float x3, float y3, float z3, Color color) {
     this->vertices = {{x1, y1, z1}, {x2, y2, z2}, {x3, y3, z3}};
+    this->normal = 0;
     this->r = color.r;
     this->b = color.b;
     this->g = color.g;
@@ -161,6 +165,63 @@ void getPlayerInput(Player *player) {
   }
 }
 
+void addBlock(float x, float y, float z, std::vector<GameObject> &gameObjects) {
+  // top
+  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+                         Color::Cyan()});
+  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+                         Color::White()});
+  // back
+  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+                         Color::Magenta()});
+  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+                         Color::Cyan()});
+  // right
+  gameObjects.push_back({x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+                         Color::White()});
+  gameObjects.push_back({x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+                         Color::Yellow()});
+  // bot
+  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
+                         Color::Yellow()});
+  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
+                         Color::White()});
+  // front
+  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+                         x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
+                         Color::Cyan()});
+  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
+                         Color::Magenta()});
+  // left
+  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+                         Color::Yellow()});
+  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+                         x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
+                         x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+                         Color::White()});
+}
+
 int main(int argc, char *argv[]) {
   SDL_Window *window;
   bool done = false;
@@ -188,36 +249,17 @@ int main(int argc, char *argv[]) {
   Player *player = new Player(0.0f, 0.0f, 10.0f);
   std::vector<GameObject> gameObjects;
 
-  // top
-  gameObjects.push_back(
-      {0.0f, 5.0f, 0.0f, 5.0f, 5.0f, 0.0f, 5.0f, 5.0f, 5.0f, Color::Cyan()});
-  gameObjects.push_back(
-      {0.0f, 5.0f, 0.0f, 0.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, Color::White()});
-  // back
-  gameObjects.push_back(
-      {0.0f, 5.0f, 0.0f, 5.0f, 5.0f, 0.0f, 5.0f, 0.0f, 0.0f, Color::Magenta()});
-  gameObjects.push_back(
-      {0.0f, 5.0f, 0.0f, 0.0f, 0.0f, 0.0f, 5.0f, 0.0f, 0.0f, Color::Cyan()});
-  // right
-  gameObjects.push_back(
-      {5.0f, 5.0f, 0.0f, 5.0f, 5.0f, 5.0f, 5.0f, 0.0f, 0.0f, Color::White()});
-  gameObjects.push_back(
-      {5.0f, 0.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 0.0f, 0.0f, Color::Yellow()});
-  // bot
-  gameObjects.push_back(
-      {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 5.0f, 5.0f, 0.0f, 5.0f, Color::Yellow()});
-  gameObjects.push_back(
-      {0.0f, 0.0f, 0.0f, 5.0f, 0.0f, 0.0f, 5.0f, 0.0f, 5.0f, Color::White()});
-  // front
-  gameObjects.push_back(
-      {0.0f, 5.0f, 5.0f, 0.0f, 0.0f, 5.0f, 5.0f, 0.0f, 5.0f, Color::Cyan()});
-  gameObjects.push_back(
-      {0.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 5.0f, 0.0f, 5.0f, Color::Magenta()});
-  // left
-  gameObjects.push_back(
-      {0.0f, 0.0f, 0.0f, 0.0f, 5.0f, 0.0f, 0.0f, 5.0f, 5.0f, Color::Yellow()});
-  gameObjects.push_back(
-      {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 5.0f, 0.0f, 5.0f, 5.0f, Color::White()});
+  std::array<terrainGeneration::Vec2, 256> v = terrainGeneration::vectors(67);
+
+  for (int x = 0; x < 16; ++x) {
+    for (int z = 0; z < 16; ++z) {
+      addBlock(static_cast<float>(x),
+               terrainGeneration::noise(static_cast<float>(x) + 0.3f,
+                                        static_cast<float>(z) + 0.4f, v) *
+                   5.0f,
+               static_cast<float>(z), gameObjects);
+    }
+  }
 
   while (!done) {
     SDL_Event event;
@@ -240,6 +282,39 @@ int main(int argc, char *argv[]) {
     getPlayerInput(player);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
+
+    std::sort(gameObjects.begin(), gameObjects.end(),
+              [&](const GameObject &g1, const GameObject &g2) -> bool {
+                float sumX1 = 0.0f, sumY1 = 0.0f, sumZ1 = 0.0f;
+                float sumX2 = 0.0f, sumY2 = 0.0f, sumZ2 = 0.0f;
+
+                for (auto [x, y, z] : g1.vertices) {
+                  sumX1 += x;
+                  sumY1 += y;
+                  sumZ1 += z;
+                }
+
+                sumX1 /= 3.0f;
+                sumY1 /= 3.0f;
+                sumZ1 /= 3.0f;
+
+                for (auto [x, y, z] : g2.vertices) {
+                  sumX2 += x;
+                  sumY2 += y;
+                  sumZ2 += z;
+                }
+
+                sumX2 /= 3.0f;
+                sumY2 /= 3.0f;
+                sumZ2 /= 3.0f;
+
+                return std::sqrt(std::pow(player->x - sumX1, 2) +
+                                 std::pow(player->y - sumY1, 2) +
+                                 std::pow(player->z - sumZ1, 2)) >
+                       std::sqrt(std::pow(player->x - sumX2, 2) +
+                                 std::pow(player->y - sumY2, 2) +
+                                 std::pow(player->z - sumZ2, 2));
+              });
 
     for (GameObject &gameObject : gameObjects) {
       gameObject.render(player->x, player->y, player->z, player->camX,
