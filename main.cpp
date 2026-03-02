@@ -16,10 +16,11 @@
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 #include <cmath>
+#include <algorithm>
 #include <cstddef>
-#include <numeric>
 #include <tuple>
 #include <vector>
+#include <print>
 
 #define windowWidth 800
 #define windowHeight 600
@@ -167,58 +168,58 @@ void getPlayerInput(Player *player) {
 
 void addBlock(float x, float y, float z, std::vector<GameObject> &gameObjects) {
   // top
-  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+  gameObjects.push_back({x * 1.0f + 0.0f, y * 1.0f + 1.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 1.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 1.0f, z * 1.0f + 1.0f,
                          Color::Cyan()});
-  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+  gameObjects.push_back({x * 1.0f + 0.0f, y * 1.0f + 1.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 0.0f, y * 1.0f + 1.0f, z * 1.0f + 1.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 1.0f, z * 1.0f + 1.0f,
                          Color::White()});
   // back
-  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+  gameObjects.push_back({x * 1.0f + 0.0f, y * 1.0f + 1.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 1.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 0.0f, z * 1.0f + 0.0f,
                          Color::Magenta()});
-  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+  gameObjects.push_back({x * 1.0f + 0.0f, y * 1.0f + 1.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 0.0f, y * 1.0f + 0.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 0.0f, z * 1.0f + 0.0f,
                          Color::Cyan()});
   // right
-  gameObjects.push_back({x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+  gameObjects.push_back({x * 1.0f + 1.0f, y * 1.0f + 1.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 1.0f, z * 1.0f + 1.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 0.0f, z * 1.0f + 0.0f,
                          Color::White()});
-  gameObjects.push_back({x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
+  gameObjects.push_back({x * 1.0f + 1.0f, y * 1.0f + 0.0f, z * 1.0f + 1.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 1.0f, z * 1.0f + 1.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 0.0f, z * 1.0f + 0.0f,
                          Color::Yellow()});
   // bot
-  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
+  gameObjects.push_back({x * 1.0f + 0.0f, y * 1.0f + 0.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 0.0f, y * 1.0f + 0.0f, z * 1.0f + 1.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 0.0f, z * 1.0f + 1.0f,
                          Color::Yellow()});
-  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
+  gameObjects.push_back({x * 1.0f + 0.0f, y * 1.0f + 0.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 0.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 0.0f, z * 1.0f + 1.0f,
                          Color::White()});
   // front
-  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
-                         x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
+  gameObjects.push_back({x * 1.0f + 0.0f, y * 1.0f + 1.0f, z * 1.0f + 1.0f,
+                         x * 1.0f + 0.0f, y * 1.0f + 0.0f, z * 1.0f + 1.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 0.0f, z * 1.0f + 1.0f,
                          Color::Cyan()});
-  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
-                         x * 5.0f + 5.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
+  gameObjects.push_back({x * 1.0f + 0.0f, y * 1.0f + 1.0f, z * 1.0f + 1.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 1.0f, z * 1.0f + 1.0f,
+                         x * 1.0f + 1.0f, y * 1.0f + 0.0f, z * 1.0f + 1.0f,
                          Color::Magenta()});
   // left
-  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+  gameObjects.push_back({x * 1.0f + 0.0f, y * 1.0f + 0.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 0.0f, y * 1.0f + 1.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 0.0f, y * 1.0f + 1.0f, z * 1.0f + 1.0f,
                          Color::Yellow()});
-  gameObjects.push_back({x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 0.0f,
-                         x * 5.0f + 0.0f, y * 5.0f + 0.0f, z * 5.0f + 5.0f,
-                         x * 5.0f + 0.0f, y * 5.0f + 5.0f, z * 5.0f + 5.0f,
+  gameObjects.push_back({x * 1.0f + 0.0f, y * 1.0f + 0.0f, z * 1.0f + 0.0f,
+                         x * 1.0f + 0.0f, y * 1.0f + 0.0f, z * 1.0f + 1.0f,
+                         x * 1.0f + 0.0f, y * 1.0f + 1.0f, z * 1.0f + 1.0f,
                          Color::White()});
 }
 
@@ -244,20 +245,32 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  SDL_CaptureMouse(true);
+  //SDL_CaptureMouse(true);
+  //if(!SDL_SetWindowRelativeMouseMode(window, true)) {
+  //  std::print("Mouse Error: {}\n", SDL_GetError());
+  //}
+  //SDL_HideCursor();
 
   Player *player = new Player(0.0f, 0.0f, 10.0f);
   std::vector<GameObject> gameObjects;
 
-  std::array<terrainGeneration::Vec2, 256> v = terrainGeneration::vectors(67);
+  std::array<terrainGeneration::Vec2, 256> v = terrainGeneration::vectors(123);
+
+  constexpr float scale = 0.01f;
 
   for (int x = 0; x < 16; ++x) {
     for (int z = 0; z < 16; ++z) {
-      addBlock(static_cast<float>(x),
-               terrainGeneration::noise(static_cast<float>(x) + 0.3f,
-                                        static_cast<float>(z) + 0.4f, v) *
-                   5.0f,
-               static_cast<float>(z), gameObjects);
+      addBlock(
+        static_cast<float>(x),
+        std::round(
+          terrainGeneration::noise(
+            static_cast<float>(x) * scale,
+            static_cast<float>(z) * scale,
+            v
+          ) * 20.0f),
+        static_cast<float>(z),
+        gameObjects
+      );
     }
   }
 
@@ -268,6 +281,13 @@ int main(int argc, char *argv[]) {
       if (event.type == SDL_EVENT_QUIT) {
         done = true;
       }
+
+      if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+        SDL_SetWindowRelativeMouseMode(window, true);
+        SDL_HideCursor();
+      }
+      
+      std::print("x: {}\ny: {}\n", event.motion.xrel, event.motion.yrel);
 
       if (event.type == SDL_EVENT_MOUSE_MOTION) {
         player->camX -= event.motion.xrel * sensitivity;

@@ -1,9 +1,7 @@
 #include <array>
-#include <cmath>
 #include <cstdint>
-#include <print>
+#include <numbers>
 #include <random>
-#include <string>
 
 namespace terrainGeneration {
 // https://www.youtube.com/watch?v=gsJHzBTPG0Y
@@ -16,18 +14,20 @@ public:
     this->y = 0;
   }
 
-  Vec2(float x1, float y1, float x2, float y2) {
+  Vec2(const float& x1, const float& y1, const float& x2, const float& y2) {
     this->x = x2 - x1;
     this->y = y2 - y1;
   }
 
-  Vec2(float u) { // u in <0,1>
-    float theta = 2.0 * M_PI * u;
+  Vec2(float theta) { // theta in <0,1>
+    theta *= 2.0 * std::numbers::pi;
     this->x = std::cos(theta);
     this->y = std::sin(theta);
   }
 
-  float operator*(const Vec2 &v) const { return this->x * v.x + this->y * v.y; }
+  float operator*(const Vec2 &v) const {
+    return this->x * v.x + this->y * v.y;
+  }
 };
 
 constexpr std::array<int, 256> grid = {
@@ -62,12 +62,8 @@ std::array<Vec2, 256> vectors(uint64_t seed) {
   return vectors;
 }
 
-float smoothstep(float x) {
-  return x * x * x * (x * (6.0f * x - 15.0f) + 10.0f);
-}
-
-float interpolation(float a0, float a1, float x) {
-  return a0 + smoothstep(x) * (a1 - a0);
+inline constexpr float smoothstep(const float& x) {
+  return 6.0f * std::pow(x, 5) - 15.0f * std::pow(x, 4) + 10.0f * std::pow(x, 3);
 }
 
 float noise(float x, float y, const std::array<Vec2, 256> &vectors) {
@@ -85,22 +81,12 @@ float noise(float x, float y, const std::array<Vec2, 256> &vectors) {
   Vec2 d3(x0, y1, x, y);
   Vec2 d4(x1, y1, x, y);
 
-  return std::lerp(std::lerp((g1 * d1), (g2 * d2), smoothstep(x - x0)),
-                   std::lerp((g3 * d3), (g4 * d4), smoothstep(x - x0)),
-                   smoothstep(y - y0));
+  float v = smoothstep(x - x0);
+
+  return std::lerp(
+    std::lerp((g1 * d1), (g2 * d2), v),
+    std::lerp((g3 * d3), (g4 * d4), v),
+    smoothstep(y - y0)
+  );
 }
 } // namespace terrainGeneration
-/*
-constexpr std::string gra[5] = {" ", "░", "▒", "▓", "█"};
-
-int main() {
-  std::array<terrainGeneration::Vec2, 256> v = terrainGeneration::vectors(67);
-
-  for (float i = 0.3f; i < 64.0f; i += 1.0f) {
-    for (float j = 0.4f; j < 64.0f; j += 1.0f) {
-      std::print("{}", gra[static_cast<int>(std::round(
-                           5.0f * terrainGeneration::noise(j, i, v)))]);
-    }
-    std::print("\n");
-  }
-}*/
