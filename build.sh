@@ -1,3 +1,3 @@
 #!/bin/zsh
 
-g++ -std=c++26 *.cpp -o build.o $(pkg-config --cflags --libs sdl3)
+clang++ -std=c++26 -target x86_64-w64-windows-gnu main.cpp -o build.exe $(pkg-config --cflags --libs sdl3)

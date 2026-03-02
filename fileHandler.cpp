@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <fstream>
 #include <print>
+#include <unordered_map>
 #include <vector>
 
 namespace fileHandler {
@@ -8,6 +9,39 @@ constexpr uint32_t glTFmagicValue = 0x46546C67;
 enum chunkType : uint32_t {
   JSON = 0x4E4F534A,
   BIN = 0x004E4942,
+};
+
+class ParseJSON {
+public:
+  std::unordered_map<std::string, std::string> um;
+
+  int trimKey(const std::string &s) {
+    int i = s.size() - 1;
+
+    while (s[i] != '.') {
+      --i;
+    }
+
+    return i - 1;
+  }
+
+  ParseJSON(const std::vector<unsigned char> &v) {
+    int pos = 1;
+    std::string key = "";
+    std::string value = "";
+
+    while (pos < v.size() - 1) {
+      ++pos;
+    }
+  }
+
+  std::string get(const std::string &s) {
+    if (um.find(s) == um.end()) {
+      return "{}";
+    } else {
+      return um.at(s);
+    }
+  }
 };
 
 std::string formatJSON(const std::vector<unsigned char> &v) {
@@ -138,10 +172,61 @@ public:
       }
     }
   }
+
+  std::vector<std::tuple<float, float, float>> getVertices() {
+    std::vector<std::tuple<float, float, float>> vertices = {};
+
+    std::string s(this->chunks.front().data.begin(),
+                  this->chunks.front().data.end());
+    int pos = s.find("meshes");
+
+    int pos2 = pos + 9;
+    int e = 1;
+    while (e > 0) {
+      if (this->chunks.front().data[pos2] == '[') {
+        ++e;
+      }
+      if (this->chunks.front().data[pos2] == ']') {
+        --e;
+      }
+      ++pos2;
+    }
+
+    std::string s1(s.begin() + pos + 8, s.begin() + pos2);
+    int pos3 = s1.find("POSITION");
+
+    std::string s2(s1.begin() + pos3 + sizeof("POSITION\""),
+                   s1.begin() + s1.find(',', pos3));
+    int index = std::stoi(s2);
+
+    int pos4 = s.find("bufferViews") + sizeof("bufferViews\":");
+    int pos5 = pos4;
+    e = 1;
+    while (e > 0) {
+      if (this->chunks.front().data[pos5] == '[') {
+        ++e;
+      }
+      if (this->chunks.front().data[pos5] == ']') {
+        --e;
+      }
+      ++pos5;
+    }
+
+    std::string s4(s.begin() + pos4, s.begin() + pos5);
+    std::print("{}\n", s4);
+
+    std::vector<std::string> v = {};
+    int i = 0;
+    int byteOffset = 0;
+    std::print("{}\n", s4[i]);
+
+    return vertices;
+  }
 };
 } // namespace fileHandler
 
 int main() {
   fileHandler::glTFmodel model("./models/cube.glb");
   model.info();
+  model.getVertices();
 }
