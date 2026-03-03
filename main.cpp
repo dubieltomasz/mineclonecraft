@@ -286,8 +286,6 @@ int main(int argc, char *argv[]) {
         SDL_SetWindowRelativeMouseMode(window, true);
         SDL_HideCursor();
       }
-      
-      std::print("x: {}\ny: {}\n", event.motion.xrel, event.motion.yrel);
 
       if (event.type == SDL_EVENT_MOUSE_MOTION) {
         player->camX -= event.motion.xrel * sensitivity;
