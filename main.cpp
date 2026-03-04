@@ -17,10 +17,9 @@
 #include <SDL3/SDL_video.h>
 #include <cmath>
 #include <algorithm>
-#include <cstddef>
+#include <string>
 #include <tuple>
 #include <vector>
-#include <print>
 
 #define windowWidth 800
 #define windowHeight 600
@@ -128,13 +127,9 @@ public:
   }
 };
 
-Uint64 lastCheck = SDL_GetPerformanceCounter();
 
-void getPlayerInput(Player *player) {
+void getPlayerInput(Player *player, const float& dt) {
   const bool *key_states = SDL_GetKeyboardState(nullptr);
-  Uint64 t = SDL_GetPerformanceCounter();
-  float dt = static_cast<float>(t - lastCheck) / SDL_GetPerformanceFrequency();
-  lastCheck = t;
   float degrees = player->camX * M_PI / 180.0f;
 
   if (key_states[SDL_SCANCODE_W]) {
@@ -226,8 +221,12 @@ void addBlock(float x, float y, float z, std::vector<GameObject> &gameObjects) {
 int main(int argc, char *argv[]) {
   SDL_Window *window;
   bool done = false;
+  Uint64 lastCheck = SDL_GetPerformanceCounter(), fpsTime = lastCheck;
+  int frames = 0;
+  float fps = 0;
 
   SDL_Init(SDL_INIT_VIDEO); // Initialize SDL3
+  SDL_Log("Video driver: %s", SDL_GetCurrentVideoDriver());
 
   window = SDL_CreateWindow("MineCloneCraft", windowWidth, windowHeight, 0);
 
@@ -245,11 +244,9 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  //SDL_CaptureMouse(true);
-  //if(!SDL_SetWindowRelativeMouseMode(window, true)) {
-  //  std::print("Mouse Error: {}\n", SDL_GetError());
-  //}
-  //SDL_HideCursor();
+  if (!SDL_SetWindowRelativeMouseMode(window, true)) {
+    SDL_Log("Failed to enable relative mouse mode: %s", SDL_GetError());
+  }
 
   Player *player = new Player(0.0f, 0.0f, 10.0f);
   std::vector<GameObject> gameObjects;
@@ -258,8 +255,8 @@ int main(int argc, char *argv[]) {
 
   constexpr float scale = 0.01f;
 
-  for (int x = 0; x < 16; ++x) {
-    for (int z = 0; z < 16; ++z) {
+  for (int x = 0; x < 128; ++x) {
+    for (int z = 0; z < 128; ++z) {
       addBlock(
         static_cast<float>(x),
         std::round(
@@ -276,15 +273,21 @@ int main(int argc, char *argv[]) {
 
   while (!done) {
     SDL_Event event;
+    
+    Uint64 t = SDL_GetPerformanceCounter(), freq = SDL_GetPerformanceFrequency();
+    float dt = static_cast<float>(t - lastCheck) / freq;
+    lastCheck = t;
+    ++frames;
+
+    if(t - fpsTime >= freq) {
+      fps = static_cast<float>(frames) * freq / (t - fpsTime);
+      fpsTime = t;
+      frames = 0;
+    }
 
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_EVENT_QUIT) {
         done = true;
-      }
-
-      if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-        SDL_SetWindowRelativeMouseMode(window, true);
-        SDL_HideCursor();
       }
 
       if (event.type == SDL_EVENT_MOUSE_MOTION) {
@@ -297,7 +300,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    getPlayerInput(player);
+    getPlayerInput(player, dt);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
@@ -339,6 +342,8 @@ int main(int argc, char *argv[]) {
                         player->camY, renderer);
     }
 
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+    SDL_RenderDebugText(renderer, 10, 10, std::to_string(std::round(fps)).c_str());
     SDL_RenderPresent(renderer);
   }
 

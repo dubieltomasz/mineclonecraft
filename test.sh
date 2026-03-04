@@ -4,4 +4,6 @@ mkdir ./build
 cd ./build
 cmake ..
 cmake --build .
-./MineCloneCraft && cd .. && rm -rf ./build
+./MineCloneCraft
+cd ..
+rm -rf ./build
