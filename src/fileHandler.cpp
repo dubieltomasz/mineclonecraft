@@ -1,21 +1,9 @@
-#include <cstdint>
-#include <fstream>
+#include "../include/fileHandler.hpp"
 #include <print>
-#include <unordered_map>
-#include <vector>
+#include <fstream>
 
 namespace fileHandler {
-constexpr uint32_t glTFmagicValue = 0x46546C67;
-enum chunkType : uint32_t {
-  JSON = 0x4E4F534A,
-  BIN = 0x004E4942,
-};
-
-class ParseJSON {
-public:
-  std::unordered_map<std::string, std::string> um;
-
-  int trimKey(const std::string &s) {
+  int ParseJSON::trimKey(const std::string &s) {
     int i = s.size() - 1;
 
     while (s[i] != '.') {
@@ -25,7 +13,7 @@ public:
     return i - 1;
   }
 
-  ParseJSON(const std::vector<unsigned char> &v) {
+  ParseJSON::ParseJSON(const std::vector<unsigned char> &v) {
     int pos = 1;
     std::string key = "";
     std::string value = "";
@@ -35,85 +23,60 @@ public:
     }
   }
 
-  std::string get(const std::string &s) {
+  std::string ParseJSON::get(const std::string &s) {
     if (um.find(s) == um.end()) {
       return "{}";
     } else {
       return um.at(s);
     }
   }
-};
 
-std::string formatJSON(const std::vector<unsigned char> &v) {
-  std::string result = "";
-  result.reserve(v.size() * 4);
-  int indentation = 0;
+  std::string ParseJSON::formatJSON(const std::vector<unsigned char> &v) {
+    std::string result = "";
+    result.reserve(v.size() * 4);
+    int indentation = 0;
 
-  for (const unsigned char &uc : v) {
-    switch (uc) {
-    case '{':
-      result += "{\n";
-      result.append(++indentation * 4, ' ');
-      break;
-    case '}':
-      result += '\n';
-      result.append(--indentation * 4, ' ');
-      result += "}\n";
-      result.append(indentation * 4, ' ');
-      break;
-    case '[':
-      result += "[\n";
-      result.append(++indentation * 4, ' ');
-      break;
-    case ']':
-      result += '\n';
-      result.append(--indentation * 4, ' ');
-      result += "]\n";
-      result.append(indentation * 4, ' ');
-      break;
-    case ',':
-      result += ",\n";
-      result.append(indentation * 4, ' ');
-      break;
-    default:
-      result += uc;
-      break;
+    for (const unsigned char &uc : v) {
+      switch (uc) {
+      case '{':
+        result += "{\n";
+        result.append(++indentation * 4, ' ');
+        break;
+      case '}':
+        result += '\n';
+        result.append(--indentation * 4, ' ');
+        result += "}\n";
+        result.append(indentation * 4, ' ');
+        break;
+      case '[':
+        result += "[\n";
+        result.append(++indentation * 4, ' ');
+        break;
+      case ']':
+        result += '\n';
+        result.append(--indentation * 4, ' ');
+        result += "]\n";
+        result.append(indentation * 4, ' ');
+        break;
+      case ',':
+        result += ",\n";
+        result.append(indentation * 4, ' ');
+        break;
+      default:
+        result += uc;
+        break;
+      }
     }
+
+    return result;
   }
 
-  return result;
-}
-
-class glTFchunk {
-public:
-  uint32_t type;
-  std::vector<unsigned char> data;
-
-  glTFchunk(uint32_t type, std::vector<unsigned char> &&chunkData) {
+  glTFchunk::glTFchunk(uint32_t type, std::vector<unsigned char> &&chunkData) {
     this->type = type;
     this->data = std::move(chunkData);
   }
 
-  static inline std::string typeToString(const uint32_t &type) {
-    switch (type) {
-    case chunkType::JSON:
-      return "JSON";
-    case chunkType::BIN:
-      return "BIN";
-    default:
-      return "UNKNOWN";
-    }
-  }
-};
-
-class glTFmodel {
-public:
-  uint32_t magic;
-  uint32_t version;
-  uint32_t length;
-  std::vector<glTFchunk> chunks;
-
-  glTFmodel(const std::string &fileName) {
+  glTFmodel::glTFmodel(const std::string &fileName) {
     this->chunks = {};
     std::ifstream file(fileName, std::ios::binary | std::ios::in);
 
@@ -159,7 +122,7 @@ public:
     file.close();
   }
 
-  void info() {
+  void glTFmodel::info() {
     std::print("====model====\nmagic: 0x{:08X}\nversion: {}\nlength: {}\n",
                this->magic, this->version, this->length);
 
@@ -168,12 +131,12 @@ public:
                  glTFchunk::typeToString(chunk.type));
 
       if (chunk.type == chunkType::JSON) {
-        std::print("{}\n", formatJSON(chunk.data));
+        std::print("{}\n", ParseJSON::formatJSON(chunk.data));
       }
     }
   }
 
-  std::vector<std::tuple<float, float, float>> getVertices() {
+  std::vector<std::tuple<float, float, float>> glTFmodel::getVertices() {
     std::vector<std::tuple<float, float, float>> vertices = {};
 
     std::string s(this->chunks.front().data.begin(),
@@ -222,11 +185,10 @@ public:
 
     return vertices;
   }
-};
 } // namespace fileHandler
-
+/*
 int main() {
   fileHandler::glTFmodel model("./models/cube.glb");
   model.info();
   model.getVertices();
-}
+}*/
