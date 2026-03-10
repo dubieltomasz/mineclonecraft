@@ -38,6 +38,8 @@ class Mat4 {
 public:
   std::array<float, 16> array;
 
+  Mat4();
+
   Mat4(float value);
 
   Mat4(const std::array<float, 16> &array);

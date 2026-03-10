@@ -3,6 +3,8 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
+#include "chunk.hpp"
+#include "player.hpp"
 #include <string>
 #include <vector>
 
@@ -23,6 +25,15 @@ public:
     static Color White();
   };
 
+  class Triangle {
+  public:
+    std::tuple<float, float, float> vertices;
+    std::tuple<int, int, int> indices;
+    char normal;
+
+    Triangle();
+  };
+
   class GameObject {
   public:
     std::vector<std::tuple<float, float, float>> vertices;
@@ -31,15 +42,17 @@ public:
 
     GameObject(float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, Color color);
   };
-  
-  std::vector<SDL_Vertex> ProjectToScreen(const std::vector<std::tuple<float, float, float>> &vertices, float camX, float camY, float camZ, float camRotX, float camRotY, float r, float b, float g);
-  
+
+  void addGlobalVertices(std::vector<SDL_Vertex>& v, const std::vector<std::tuple<float, float, float>> &vertices, const calc::Mat4& camera , float r, float b, float g);
+
   SDL_Renderer* renderer;
   int r, g, b;
-  
+
   Renderer(SDL_Window* window, int r, int g, int b);
 
   ~Renderer();
 
-  void render(const std::string& fps, int objects, std::vector<GameObject> v, float cameraX, float cameraY, float cameraZ, float camRotX, float camRotY);
+  void render(const std::string& fps, int objects, std::vector<GameObject> triangles, const Player& player);
+
+  void renderTerrain(const std::string& fps, int objects, const std::vector<std::tuple<float, float, float>>& vertices, const std::vector<std::tuple<float, float, float>>& colors, const std::vector<uint8_t>& normals, const std::vector<int>& indices, const Player& player);
 };

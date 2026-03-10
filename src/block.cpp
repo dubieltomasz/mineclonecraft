@@ -1,5 +1,21 @@
 #include "../include/block.hpp"
 
+Block::Block() {
+  this->size = 1.0f;
+  this->x = 0.0f;
+  this->y = 0.0f;
+  this->z = 0.0f;
+  this->texture = nullptr;
+}
+
+Block::Block(float size, float x, float y, float z, SDL_Texture texture) {
+  this->size = 1.0f;
+  this->x = x;
+  this->y = y;
+  this->z = z;
+  this->texture = nullptr;
+}
+
 void addBlock(float x, float y, float z, std::vector<Renderer::GameObject> &gameObjects) {
   // top
   gameObjects.push_back({x * 1.0f + 0.0f, y * 1.0f + 1.0f, z * 1.0f + 0.0f,

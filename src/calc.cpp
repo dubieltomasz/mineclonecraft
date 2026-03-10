@@ -85,6 +85,10 @@ namespace calc {
     }
   }
 
+  Mat4::Mat4() {
+    *this = MIdentity();
+  }
+
   Mat4::Mat4(float value) {
     this->array.fill(0.0f);
     this->array[0] = value;

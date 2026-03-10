@@ -1,6 +1,6 @@
 #include "./include/player.hpp"
 #include "./include/terrainGeneration.hpp"
-#include "./include/block.hpp"
+#include "./include/chunk.hpp"
 #include "./include/renderer.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
@@ -49,12 +49,25 @@ int main(int argc, char *argv[]) {
   }
 
   Player player(0.0f, 0.0f, 10.0f);
-  std::vector<Renderer::GameObject> gameObjects;
+  std::vector<Renderer::GameObject> terrain;
 
   std::array<terrainGeneration::Vec2, 256> v = terrainGeneration::vectors(67);
 
   constexpr float scale = 0.01f;
-  for (int x = 0; x < 128; ++x) {
+  std::vector<Chunk> chunks;
+  {
+    Chunk newChunk(0.0f, 0.0f, 0.0f, v, scale);
+    chunks.push_back(newChunk);
+  }
+
+  std::vector<std::tuple<float, float, float>> vertices = {};
+  std::vector<std::tuple<float, float, float>> colors = {};
+  std::vector<uint8_t> normals = {};
+
+  for(const Chunk& chunk : chunks) {
+    chunk.loadChunk(vertices, colors, normals);
+  }
+  /*for (int x = 0; x < 128; ++x) {
     for (int z = 0; z < 128; ++z) {
       addBlock(
         static_cast<float>(x),
@@ -65,28 +78,17 @@ int main(int argc, char *argv[]) {
             v
           ) * 20.0f),
         static_cast<float>(z),
-        gameObjects
+        terrain
       );
     }
-  }/*
-  addBlock(
-    static_cast<float>(0),
-    std::round(
-      terrainGeneration::noise(
-        static_cast<float>(0) * scale,
-        static_cast<float>(0) * scale,
-        v
-      ) * 20.0f),
-    static_cast<float>(0),
-    gameObjects
-  );*/
+  }*/
 
   SDL_Event event;
   while (!shouldClose) {  
     t = SDL_GetPerformanceCounter();
     freq = SDL_GetPerformanceFrequency();
     ++frames;
-    
+
     float dt = static_cast<float>(t - lastCheck) / freq;
     lastCheck = t;
 
@@ -104,8 +106,10 @@ int main(int argc, char *argv[]) {
       player.handleEvent(event);
     }
     player.handleInput(dt);
-    
-    render.render(fps, gameObjects.size(), gameObjects, player.x, player.y, player.z, player.camX, player.camY);
+    player.updateCamera();
+
+    //render.render(fps, terrain.size(), terrain, player);
+    render.renderTerrain(fps, chunks.size(), vertices, colors, normals, {}, player);
   }
 
   SDL_DestroyWindow(window);
