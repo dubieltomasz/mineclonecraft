@@ -25,15 +25,6 @@ public:
     static Color White();
   };
 
-  class Triangle {
-  public:
-    std::tuple<float, float, float> vertices;
-    std::tuple<int, int, int> indices;
-    char normal;
-
-    Triangle();
-  };
-
   class GameObject {
   public:
     std::vector<std::tuple<float, float, float>> vertices;
@@ -54,5 +45,5 @@ public:
 
   void render(const std::string& fps, int objects, std::vector<GameObject> triangles, const Player& player);
 
-  void renderTerrain(const std::string& fps, int objects, const std::vector<std::tuple<float, float, float>>& vertices, const std::vector<std::tuple<float, float, float>>& colors, const std::vector<uint8_t>& normals, const std::vector<int>& indices, const Player& player);
+  void renderTerrain(const std::string& fps, int objects, const std::vector<std::tuple<float, float, float>>& vertices, const std::vector<std::tuple<float, float, float>>& colors, const std::vector<uint8_t>& normals, const Player& player);
 };

@@ -67,21 +67,6 @@ int main(int argc, char *argv[]) {
   for(const Chunk& chunk : chunks) {
     chunk.loadChunk(vertices, colors, normals);
   }
-  /*for (int x = 0; x < 128; ++x) {
-    for (int z = 0; z < 128; ++z) {
-      addBlock(
-        static_cast<float>(x),
-        std::round(
-          terrainGeneration::noise(
-            static_cast<float>(x) * scale,
-            static_cast<float>(z) * scale,
-            v
-          ) * 20.0f),
-        static_cast<float>(z),
-        terrain
-      );
-    }
-  }*/
 
   SDL_Event event;
   while (!shouldClose) {  
@@ -108,8 +93,7 @@ int main(int argc, char *argv[]) {
     player.handleInput(dt);
     player.updateCamera();
 
-    //render.render(fps, terrain.size(), terrain, player);
-    render.renderTerrain(fps, chunks.size(), vertices, colors, normals, {}, player);
+    render.renderTerrain(fps, chunks.size(), vertices, colors, normals, player);
   }
 
   SDL_DestroyWindow(window);

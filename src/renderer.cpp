@@ -1,6 +1,7 @@
 #include "../include/renderer.hpp"
 #include "../include/calc.hpp"
 #include <SDL3/SDL_render.h>
+#include <SDL3/SDL_surface.h>
 #include <algorithm>
 #include <cstdint>
 #include <vector>
@@ -29,12 +30,6 @@ Renderer::GameObject::GameObject(float x1, float y1, float z1, float x2, float y
   this->r = color.r;
   this->b = color.b;
   this->g = color.g;
-}
-
-Renderer::Triangle::Triangle() {
-  this->vertices = {};
-  this->indices = {};
-  this->normal = {};
 }
 
 void Renderer::addGlobalVertices(std::vector<SDL_Vertex>& v, const std::vector<std::tuple<float, float, float>> &vertices, const calc::Mat4& camera , float r, float b, float g) {
@@ -132,12 +127,21 @@ void Renderer::render(const std::string& fps, int objects, std::vector<GameObjec
   SDL_RenderPresent(this->renderer);
 }
 
-std::vector<SDL_Vertex> toGlobal(const std::vector<std::tuple<float, float, float>>& vertices, const std::vector<std::tuple<float, float, float>>& colors, const std::vector<uint8_t>& normals, const Player& player) {
+std::vector<SDL_Vertex> toGlobal(
+  const std::vector<std::tuple<float, float, float>>& vertices,
+  const std::vector<std::tuple<float, float, float>>& colors,
+  const std::vector<uint8_t>& normals,
+  std::vector<int>& indices,
+  const Player& player
+) {
   std::vector<SDL_Vertex> result = {};
   float f = 1.0f / std::tan((fov * 0.5f) * M_PI / 180.0f);
+  indices.clear();
+  int index = 0;
 
-  for (int i = 0; i < normals.size(); ++i) {
-    int vi0 = i * 3, vi1 = vi0 + 1, vi2 = vi1 + 1;
+  for (size_t i = 0; i < normals.size(); ++i) {
+    size_t vi0 = i << 2, vi1 = vi0 + 1, vi2 = vi1 + 1, vi3 = vi2 + 1;
+    size_t ci0 = i << 1, ci1 = ci0 + 1;
 
     bool ok = true;
     switch(normals[i]) {
@@ -177,65 +181,67 @@ std::vector<SDL_Vertex> toGlobal(const std::vector<std::tuple<float, float, floa
       continue;
     }
 
-    calc::Vec4 vertexGlobal0(std::get<0>(vertices[vi0]), std::get<1>(vertices[vi0]), std::get<2>(vertices[vi0]), 1.0f);
-    calc::Vec4 vertexCamera0 = player.camera * vertexGlobal0;
-    calc::Vec4 vertexGlobal1(std::get<0>(vertices[vi1]), std::get<1>(vertices[vi1]), std::get<2>(vertices[vi1]), 1.0f);
-    calc::Vec4 vertexCamera1 = player.camera * vertexGlobal1;
-    calc::Vec4 vertexGlobal2(std::get<0>(vertices[vi2]), std::get<1>(vertices[vi2]), std::get<2>(vertices[vi2]), 1.0f);
-    calc::Vec4 vertexCamera2 = player.camera * vertexGlobal2;
+    calc::Vec4 vertexGlobal[4] = {
+      {std::get<0>(vertices[vi0]), std::get<1>(vertices[vi0]), std::get<2>(vertices[vi0]), 1.0f},
+      {std::get<0>(vertices[vi1]), std::get<1>(vertices[vi1]), std::get<2>(vertices[vi1]), 1.0f},
+      {std::get<0>(vertices[vi2]), std::get<1>(vertices[vi2]), std::get<2>(vertices[vi2]), 1.0f},
+      {std::get<0>(vertices[vi3]), std::get<1>(vertices[vi3]), std::get<2>(vertices[vi3]), 1.0f},
+    };
 
-    if (vertexCamera0.z >= 0.0f || vertexCamera1.z >= 0.0f || vertexCamera2.z >= 0.0f) {
+    calc::Vec4 vertexCamera[4] = {
+      player.camera * vertexGlobal[0],
+      player.camera * vertexGlobal[1],
+      player.camera * vertexGlobal[2],
+      player.camera * vertexGlobal[3],
+    };
+    
+    if (vertexCamera[0].z >= 0.0f || vertexCamera[1].z >= 0.0f || vertexCamera[2].z >= 0.0f || vertexCamera[3].z >= 0.0f) {
       continue;
     }
+    float coordsA[4] = {0.0f, 0.0f, 1.0f, 1.0f};
+    float coordsB[4] = {0.0f, 1.0f, 0.0f, 1.0f};
 
-    float dx = (vertexCamera0.x) * f / -vertexCamera0.z;
-    float dy = (vertexCamera0.y) * f / -vertexCamera0.z;
+    for(size_t j = 0; j < 4; ++j) {
+      float dx = (vertexCamera[j].x) * f / -vertexCamera[j].z;
+      float dy = (vertexCamera[j].y) * f / -vertexCamera[j].z;
 
-    SDL_Vertex newVertex = {};
-    newVertex.position.x = dx * (windowWidth * 0.5f) + windowWidth * 0.5f;
-    newVertex.position.y = -dy * (windowHeight * 0.5f) + windowHeight * 0.5f;
-    newVertex.color.a = 1.0f;
-    newVertex.color.r = std::get<0>(colors[i / 3]);
-    newVertex.color.b = std::get<1>(colors[i / 3]);
-    newVertex.color.g = std::get<2>(colors[i / 3]);
+      result.push_back({
+        dx * (windowWidth * 0.5f) + windowWidth * 0.5f,
+        -dy * (windowHeight * 0.5f) + windowHeight * 0.5f,/*
+        std::get<0>(colors[i * 2]),
+        std::get<1>(colors[i * 2]),
+        std::get<2>(colors[i * 2]),*/
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        coordsA[j],
+        coordsB[j],
+      });
+    }
 
-    result.push_back(newVertex);
-    
-    dx = (vertexCamera1.x) * f / -vertexCamera1.z;
-    dy = (vertexCamera1.y) * f / -vertexCamera1.z;
-
-    newVertex.position.x = dx * (windowWidth * 0.5f) + windowWidth * 0.5f;
-    newVertex.position.y = -dy * (windowHeight * 0.5f) + windowHeight * 0.5f;
-    newVertex.color.a = 1.0f;
-    newVertex.color.r = std::get<0>(colors[i / 3]);
-    newVertex.color.b = std::get<1>(colors[i / 3]);
-    newVertex.color.g = std::get<2>(colors[i / 3]);
-
-    result.push_back(newVertex);
-    
-    dx = (vertexCamera2.x) * f / -vertexCamera2.z;
-    dy = (vertexCamera2.y) * f / -vertexCamera2.z;
-
-    newVertex.position.x = dx * (windowWidth * 0.5f) + windowWidth * 0.5f;
-    newVertex.position.y = -dy * (windowHeight * 0.5f) + windowHeight * 0.5f;
-    newVertex.color.a = 1.0f;
-    newVertex.color.r = std::get<0>(colors[i / 3]);
-    newVertex.color.b = std::get<1>(colors[i / 3]);
-    newVertex.color.g = std::get<2>(colors[i / 3]);
-
-    result.push_back(newVertex);
+    indices.push_back(index);
+    indices.push_back(index + 1);
+    indices.push_back(index + 2);
+    indices.push_back(index + 1);
+    indices.push_back(index + 2);
+    indices.push_back(index + 3);
+    index += 4;
   }
 
   return result;
 }
 
-void Renderer::renderTerrain(const std::string& fps, int objects, const std::vector<std::tuple<float, float, float>>& vertices, const std::vector<std::tuple<float, float, float>>& colors, const std::vector<uint8_t>& normals, const std::vector<int>& indices, const Player& player) {
+void Renderer::renderTerrain(const std::string& fps, int objects, const std::vector<std::tuple<float, float, float>>& vertices, const std::vector<std::tuple<float, float, float>>& colors, const std::vector<uint8_t>& normals, const Player& player) {
   SDL_SetRenderDrawColor(this->renderer, this->r, this->g, this->b, 255);
   SDL_RenderClear(this->renderer);
+  SDL_Surface *surface = SDL_LoadPNG("../textures/tex.png");
+  SDL_Texture *texture = SDL_CreateTextureFromSurface(this->renderer, surface);
 
-  std::vector<SDL_Vertex> triangles = toGlobal(vertices, colors, normals, player);
+  std::vector<int> indices = {};
+  std::vector<SDL_Vertex> triangles = toGlobal(vertices, colors, normals, indices, player);
 
-  SDL_RenderGeometry(renderer, nullptr, triangles.data(), triangles.size(), nullptr, triangles.size());
+  SDL_RenderGeometry(renderer, texture, triangles.data(), triangles.size(), indices.data(), indices.size());
 
   SDL_SetRenderDrawColor(this->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
   SDL_RenderDebugText(this->renderer, 10, 10, ("FPS: " + fps).c_str());

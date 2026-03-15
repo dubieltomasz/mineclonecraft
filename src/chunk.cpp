@@ -27,17 +27,6 @@ Chunk::Chunk(float x, float y, float z, const std::array<terrainGeneration::Vec2
             ) * 10
           ) + 1.0f
         ) << 8)] = 1;
-      /*addBlock(
-        static_cast<float>(0),
-        std::round(
-          terrainGeneration::noise(
-            static_cast<float>(0) * scale,
-            static_cast<float>(0) * scale,
-            v
-          ) * 20.0f),
-        static_cast<float>(0),
-        terrain
-      );*/
     }
   }
 }
@@ -51,72 +40,54 @@ void Chunk::loadChunk(std::vector<std::tuple<float, float, float>>& vertices, st
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY, this->z + chunkZ + 1.0f));
-          vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ));
-          vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY, this->z + chunkZ + 1.0f));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ + 1.0f));
           colors.push_back(std::make_tuple(1.0f, 1.0f, 0.0f));
           colors.push_back(std::make_tuple(0.0f, 0.0f, 1.0f));
-          normals.push_back(1);
           normals.push_back(1);
 
           //left
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY, this->z + chunkZ + 1.0f));
-          vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ));
-          vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY, this->z + chunkZ + 1.0f));
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
           colors.push_back(std::make_tuple(1.0f, 0.0f, 1.0f));
           colors.push_back(std::make_tuple(0.0f, 1.0f, 0.0f));
-          normals.push_back(2);
           normals.push_back(2);
 
           //back
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ));
-          vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ));
-          vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ));
           colors.push_back(std::make_tuple(0.0f, 1.0f, 1.0f));
           colors.push_back(std::make_tuple(1.0f, 0.0f, 0.0f));
-          normals.push_back(4);
           normals.push_back(4);
 
           //top
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
-          vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ));
-          vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
           colors.push_back(std::make_tuple(1.0f, 1.0f, 0.0f));
           colors.push_back(std::make_tuple(0.0f, 0.0f, 1.0f));
-          normals.push_back(8);
           normals.push_back(8);
 
           //right
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ + 1.0f));
-          vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ));
-          vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ + 1.0f));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
           colors.push_back(std::make_tuple(1.0f, 0.0f, 1.0f));
           colors.push_back(std::make_tuple(0.0f, 1.0f, 0.0f));
-          normals.push_back(16);
           normals.push_back(16);
 
           //front
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY, this->z + chunkZ + 1.0f));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ + 1.0f));
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
-          vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ + 1.0f));
-          vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
           colors.push_back(std::make_tuple(0.0f, 1.0f, 1.0f));
           colors.push_back(std::make_tuple(1.0f, 0.0f, 0.0f));
-          normals.push_back(32);
           normals.push_back(32);
         }
       }
