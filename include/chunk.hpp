@@ -14,5 +14,5 @@ public:
   Chunk();
   Chunk(float x, float y, float z, const std::array<terrainGeneration::Vec2, 256>& v, float scale);
 
-  void loadChunk(std::vector<std::tuple<float, float, float>>& vertices, std::vector<std::tuple<float, float, float>>& colors, std::vector<uint8_t>& normals) const;
+  void loadChunk(std::vector<std::tuple<float, float, float>>& vertices, std::vector<std::pair<float, float>>& textures, std::vector<uint8_t>& normals) const;
 };

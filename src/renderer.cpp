@@ -9,6 +9,7 @@
 #define windowWidth 800
 #define windowHeight 600
 #define fov 90.0f
+#define texturesInTexture 4.0f
 
 Renderer::Color::Color(float r, float g, float b) {
     this->r = r;
@@ -129,7 +130,7 @@ void Renderer::render(const std::string& fps, int objects, std::vector<GameObjec
 
 std::vector<SDL_Vertex> toGlobal(
   const std::vector<std::tuple<float, float, float>>& vertices,
-  const std::vector<std::tuple<float, float, float>>& colors,
+  const std::vector<std::pair<float, float>>& textures,
   const std::vector<uint8_t>& normals,
   std::vector<int>& indices,
   const Player& player
@@ -141,7 +142,6 @@ std::vector<SDL_Vertex> toGlobal(
 
   for (size_t i = 0; i < normals.size(); ++i) {
     size_t vi0 = i << 2, vi1 = vi0 + 1, vi2 = vi1 + 1, vi3 = vi2 + 1;
-    size_t ci0 = i << 1, ci1 = ci0 + 1;
 
     bool ok = true;
     switch(normals[i]) {
@@ -198,8 +198,15 @@ std::vector<SDL_Vertex> toGlobal(
     if (vertexCamera[0].z >= 0.0f || vertexCamera[1].z >= 0.0f || vertexCamera[2].z >= 0.0f || vertexCamera[3].z >= 0.0f) {
       continue;
     }
-    float coordsA[4] = {0.0f, 0.0f, 1.0f, 1.0f};
-    float coordsB[4] = {0.0f, 1.0f, 0.0f, 1.0f};
+
+    float v1 = textures[i].first / texturesInTexture - 1.0f / texturesInTexture;
+    float v2 = textures[i].first / texturesInTexture;
+    float u1 = textures[i].second / texturesInTexture - 1.0f / texturesInTexture;
+    float u2 = textures[i].first / texturesInTexture;
+    //float tex1[4] = {v1, v1, v2, v2};
+    //float tex2[4] = {u1, u2, u1, u2};
+    float tex1[4] = {0.0f, 0.0f, 1.0f, 1.0f};
+    float tex2[4] = {0.0f, 1.0f, 0.0f, 1.0f};
 
     for(size_t j = 0; j < 4; ++j) {
       float dx = (vertexCamera[j].x) * f / -vertexCamera[j].z;
@@ -208,15 +215,15 @@ std::vector<SDL_Vertex> toGlobal(
       result.push_back({
         dx * (windowWidth * 0.5f) + windowWidth * 0.5f,
         -dy * (windowHeight * 0.5f) + windowHeight * 0.5f,/*
-        std::get<0>(colors[i * 2]),
-        std::get<1>(colors[i * 2]),
-        std::get<2>(colors[i * 2]),*/
+        std::get<0>(textures[i * 2]),
+        std::get<1>(textures[i * 2]),
+        std::get<2>(textures[i * 2]),*/
         1.0f,
         1.0f,
         1.0f,
         1.0f,
-        coordsA[j],
-        coordsB[j],
+        tex1[j],
+        tex2[j],
       });
     }
 
@@ -232,14 +239,14 @@ std::vector<SDL_Vertex> toGlobal(
   return result;
 }
 
-void Renderer::renderTerrain(const std::string& fps, int objects, const std::vector<std::tuple<float, float, float>>& vertices, const std::vector<std::tuple<float, float, float>>& colors, const std::vector<uint8_t>& normals, const Player& player) {
+void Renderer::renderTerrain(const std::string& fps, int objects, const std::vector<std::tuple<float, float, float>>& vertices, const std::vector<std::pair<float, float>>& textures, const std::vector<uint8_t>& normals, const Player& player) {
   SDL_SetRenderDrawColor(this->renderer, this->r, this->g, this->b, 255);
   SDL_RenderClear(this->renderer);
-  SDL_Surface *surface = SDL_LoadPNG("../textures/tex.png");
+  SDL_Surface *surface = SDL_LoadPNG("../textures/tri.png");
   SDL_Texture *texture = SDL_CreateTextureFromSurface(this->renderer, surface);
 
   std::vector<int> indices = {};
-  std::vector<SDL_Vertex> triangles = toGlobal(vertices, colors, normals, indices, player);
+  std::vector<SDL_Vertex> triangles = toGlobal(vertices, textures, normals, indices, player);
 
   SDL_RenderGeometry(renderer, texture, triangles.data(), triangles.size(), indices.data(), indices.size());
 

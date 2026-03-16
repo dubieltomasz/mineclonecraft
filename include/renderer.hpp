@@ -45,5 +45,5 @@ public:
 
   void render(const std::string& fps, int objects, std::vector<GameObject> triangles, const Player& player);
 
-  void renderTerrain(const std::string& fps, int objects, const std::vector<std::tuple<float, float, float>>& vertices, const std::vector<std::tuple<float, float, float>>& colors, const std::vector<uint8_t>& normals, const Player& player);
+  void renderTerrain(const std::string& fps, int objects, const std::vector<std::tuple<float, float, float>>& vertices, const std::vector<std::pair<float, float>>& textures, const std::vector<uint8_t>& normals, const Player& player);
 };

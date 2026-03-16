@@ -1,6 +1,7 @@
 #include "../include/chunk.hpp"
 #include <cstdint>
 #include <tuple>
+#include <utility>
 
 Chunk::Chunk() {
   this->x = 0.0f;
@@ -20,18 +21,18 @@ Chunk::Chunk(float x, float y, float z, const std::array<terrainGeneration::Vec2
       this->blocks[chunkZ + (chunkX << 4) + (
         static_cast<int>(
           std::round(
-            terrainGeneration::noise(
-              static_cast<float>(chunkX) * scale,
-              static_cast<float>(chunkZ) * scale,
+            (terrainGeneration::noise(
+              (this->x + static_cast<float>(chunkX)) * scale,
+              (this->z + static_cast<float>(chunkZ)) * scale,
               v
-            ) * 10
-          ) + 1.0f
-        ) << 8)] = 1;
+          ) + 1.0f ) * 0.5f * 15.0f
+        )
+      ) << 8)] = 1;
     }
   }
 }
 
-void Chunk::loadChunk(std::vector<std::tuple<float, float, float>>& vertices, std::vector<std::tuple<float, float, float>>& colors, std::vector<uint8_t>& normals) const {
+void Chunk::loadChunk(std::vector<std::tuple<float, float, float>>& vertices, std::vector<std::pair<float, float>>& textures, std::vector<uint8_t>& normals) const {
   for(int chunkY = 0; chunkY < 16; ++chunkY) {
     for(int chunkX = 0; chunkX < 16; ++chunkX) {
       for(int chunkZ = 0; chunkZ < 16; ++chunkZ) {
@@ -41,8 +42,7 @@ void Chunk::loadChunk(std::vector<std::tuple<float, float, float>>& vertices, st
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY, this->z + chunkZ + 1.0f));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ + 1.0f));
-          colors.push_back(std::make_tuple(1.0f, 1.0f, 0.0f));
-          colors.push_back(std::make_tuple(0.0f, 0.0f, 1.0f));
+          textures.push_back(std::make_pair(this->blocks[chunkZ + (chunkX << 4) + (chunkY << 8)], 1.0f));
           normals.push_back(1);
 
           //left
@@ -50,8 +50,7 @@ void Chunk::loadChunk(std::vector<std::tuple<float, float, float>>& vertices, st
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY, this->z + chunkZ + 1.0f));
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
-          colors.push_back(std::make_tuple(1.0f, 0.0f, 1.0f));
-          colors.push_back(std::make_tuple(0.0f, 1.0f, 0.0f));
+          textures.push_back(std::make_pair(this->blocks[chunkZ + (chunkX << 4) + (chunkY << 8)], 1.0f));
           normals.push_back(2);
 
           //back
@@ -59,8 +58,7 @@ void Chunk::loadChunk(std::vector<std::tuple<float, float, float>>& vertices, st
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ));
-          colors.push_back(std::make_tuple(0.0f, 1.0f, 1.0f));
-          colors.push_back(std::make_tuple(1.0f, 0.0f, 0.0f));
+          textures.push_back(std::make_pair(this->blocks[chunkZ + (chunkX << 4) + (chunkY << 8)], 1.0f));
           normals.push_back(4);
 
           //top
@@ -68,8 +66,7 @@ void Chunk::loadChunk(std::vector<std::tuple<float, float, float>>& vertices, st
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
-          colors.push_back(std::make_tuple(1.0f, 1.0f, 0.0f));
-          colors.push_back(std::make_tuple(0.0f, 0.0f, 1.0f));
+          textures.push_back(std::make_pair(this->blocks[chunkZ + (chunkX << 4) + (chunkY << 8)], 1.0f));
           normals.push_back(8);
 
           //right
@@ -77,8 +74,7 @@ void Chunk::loadChunk(std::vector<std::tuple<float, float, float>>& vertices, st
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ + 1.0f));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
-          colors.push_back(std::make_tuple(1.0f, 0.0f, 1.0f));
-          colors.push_back(std::make_tuple(0.0f, 1.0f, 0.0f));
+          textures.push_back(std::make_pair(this->blocks[chunkZ + (chunkX << 4) + (chunkY << 8)], 1.0f));
           normals.push_back(16);
 
           //front
@@ -86,8 +82,7 @@ void Chunk::loadChunk(std::vector<std::tuple<float, float, float>>& vertices, st
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY, this->z + chunkZ + 1.0f));
           vertices.push_back(std::make_tuple(this->x + chunkX, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
           vertices.push_back(std::make_tuple(this->x + chunkX + 1.0f, this->y + chunkY + 1.0f, this->z + chunkZ + 1.0f));
-          colors.push_back(std::make_tuple(0.0f, 1.0f, 1.0f));
-          colors.push_back(std::make_tuple(1.0f, 0.0f, 0.0f));
+          textures.push_back(std::make_pair(this->blocks[chunkZ + (chunkX << 4) + (chunkY << 8)], 1.0f));
           normals.push_back(32);
         }
       }

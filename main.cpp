@@ -56,16 +56,23 @@ int main(int argc, char *argv[]) {
   constexpr float scale = 0.01f;
   std::vector<Chunk> chunks;
   {
-    Chunk newChunk(0.0f, 0.0f, 0.0f, v, scale);
-    chunks.push_back(newChunk);
+    chunks.push_back(Chunk(0.0f, 0.0f, 0.0f, v, scale));
+    chunks.push_back(Chunk(0.0f, 0.0f, 16.0f, v, scale));
+    chunks.push_back(Chunk(16.0f, 0.0f, 0.0f, v, scale));
+    chunks.push_back(Chunk(16.0f, 0.0f, 16.0f, v, scale));
+    chunks.push_back(Chunk(0.0f, 0.0f, 32.0f, v, scale));
+    chunks.push_back(Chunk(32.0f, 0.0f, 0.0f, v, scale));
+    chunks.push_back(Chunk(16.0f, 0.0f, 32.0f, v, scale));
+    chunks.push_back(Chunk(32.0f, 0.0f, 16.0f, v, scale));
+    chunks.push_back(Chunk(32.0f, 0.0f, 32.0f, v, scale));
   }
 
   std::vector<std::tuple<float, float, float>> vertices = {};
-  std::vector<std::tuple<float, float, float>> colors = {};
+  std::vector<std::pair<float, float>> textures = {};
   std::vector<uint8_t> normals = {};
 
   for(const Chunk& chunk : chunks) {
-    chunk.loadChunk(vertices, colors, normals);
+    chunk.loadChunk(vertices, textures, normals);
   }
 
   SDL_Event event;
@@ -93,7 +100,7 @@ int main(int argc, char *argv[]) {
     player.handleInput(dt);
     player.updateCamera();
 
-    render.renderTerrain(fps, chunks.size(), vertices, colors, normals, player);
+    render.renderTerrain(fps, chunks.size(), vertices, textures, normals, player);
   }
 
   SDL_DestroyWindow(window);
