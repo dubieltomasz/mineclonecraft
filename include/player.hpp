@@ -10,8 +10,8 @@ public:
   float x;
   float y;
   float z;
-  float camX;
-  float camY;
+  float rotX;
+  float rotY;
   calc::Mat4 camera;
 
   Player(float x, float y, float z);

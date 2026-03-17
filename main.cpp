@@ -31,14 +31,14 @@ int main(int argc, char *argv[]) {
   int frames = 0;
   std::string fps;
 
-  SDL_Window *window;
+  SDL_Window* window;
   if(!(window = SDL_CreateWindow("MineCloneCraft", windowWidth, windowHeight, 0))) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create window: %s\n", SDL_GetError());
     return 1;
   }
 
-  Renderer render(window, 0, 0, 0);
-  if (render.renderer == nullptr) {
+  Renderer renderer(window, 70, 10, 100);
+  if (!renderer.ok()) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create renderer: %s\n", SDL_GetError());
     return 1;
   };
@@ -49,22 +49,16 @@ int main(int argc, char *argv[]) {
   }
 
   Player player(0.0f, 0.0f, 10.0f);
-  std::vector<Renderer::GameObject> terrain;
 
-  std::array<terrainGeneration::Vec2, 256> v = terrainGeneration::vectors(67);
+  std::array<calc::Vec2, 256> v = terrainGeneration::vectors(67);
 
   constexpr float scale = 0.01f;
   std::vector<Chunk> chunks;
-  {
-    chunks.push_back(Chunk(0.0f, 0.0f, 0.0f, v, scale));
-    chunks.push_back(Chunk(0.0f, 0.0f, 16.0f, v, scale));
-    chunks.push_back(Chunk(16.0f, 0.0f, 0.0f, v, scale));
-    chunks.push_back(Chunk(16.0f, 0.0f, 16.0f, v, scale));
-    chunks.push_back(Chunk(0.0f, 0.0f, 32.0f, v, scale));
-    chunks.push_back(Chunk(32.0f, 0.0f, 0.0f, v, scale));
-    chunks.push_back(Chunk(16.0f, 0.0f, 32.0f, v, scale));
-    chunks.push_back(Chunk(32.0f, 0.0f, 16.0f, v, scale));
-    chunks.push_back(Chunk(32.0f, 0.0f, 32.0f, v, scale));
+
+  for(int i = 0; i < 8; ++i) {
+    for(int j = 0; j < 8; ++j) {
+      chunks.push_back(Chunk(i, 0, j, v, scale));
+    }
   }
 
   std::vector<std::tuple<float, float, float>> vertices = {};
@@ -100,7 +94,11 @@ int main(int argc, char *argv[]) {
     player.handleInput(dt);
     player.updateCamera();
 
-    render.renderTerrain(fps, chunks.size(), vertices, textures, normals, player);
+    renderer
+      .prepare()
+      .terrain(vertices, textures, normals, player)
+      .hud({fps, std::to_string(chunks.size())}, {{0, 0}, {0, 10}})
+      .render();
   }
 
   SDL_DestroyWindow(window);

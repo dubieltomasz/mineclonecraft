@@ -1,19 +1,20 @@
 #include "../include/chunk.hpp"
+#include "../include/terrainGeneration.hpp"
 #include <cstdint>
 #include <tuple>
 #include <utility>
 
 Chunk::Chunk() {
-  this->x = 0.0f;
-  this->y = 0.0f;
-  this->z = 0.0f;
+  this->x = 0;
+  this->y = 0;
+  this->z = 0;
   this->blocks = {};
 }
 
-Chunk::Chunk(float x, float y, float z, const std::array<terrainGeneration::Vec2, 256>& v, float scale) {
-  this->x = x;
-  this->y = y;
-  this->z = z;
+Chunk::Chunk(int x, int y, int z, const std::array<calc::Vec2, 256>& v, float scale) {
+  this->x = x << 4;
+  this->y = y << 4;
+  this->z = z << 4;
   this->blocks = {};
 
   for(int chunkX = 0; chunkX < 16; ++chunkX) {

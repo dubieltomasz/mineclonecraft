@@ -6,6 +6,19 @@
 #include <math.h>
 
 namespace calc {
+class Vec2 {
+public:
+  float x, y;
+
+  Vec2();
+
+  Vec2(const float& x1, const float& y1, const float& x2, const float& y2);
+
+  Vec2(float theta);// theta in <0,1>
+
+  float operator*(const Vec2 &v) const;
+};
+
 class Vec4 {
 public:
   float x, y, z, w;

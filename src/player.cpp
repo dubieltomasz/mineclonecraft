@@ -7,10 +7,10 @@ Player::Player(float x, float y, float z) {
   this->x = x;
   this->y = y;
   this->z = z;
-  this->camX = 0.0f;
-  this->camY = 0.0f;
+  this->rotX = 0.0f;
+  this->rotY = 0.0f;
   
-  calc::Mat4 rotation = calc::Mat4::MRotationY(this->camX * M_PI / 180.0f) *  calc::Mat4::MRotationX(this->camY * M_PI / 180.0f);
+  calc::Mat4 rotation = calc::Mat4::MRotationY(this->rotX * M_PI / 180.0f) *  calc::Mat4::MRotationX(this->rotY * M_PI / 180.0f);
 
   calc::Mat4 translation = calc::Mat4::MIdentity();
   translation(0, 3) = -x;
@@ -22,19 +22,19 @@ Player::Player(float x, float y, float z) {
 
 void Player::handleEvent(const SDL_Event& event) {
   if (event.type == SDL_EVENT_MOUSE_MOTION) {
-    this->camX -= event.motion.xrel * sensitivity;
-    this->camY -= event.motion.yrel * sensitivity;
+    this->rotX -= event.motion.xrel * sensitivity;
+    this->rotY -= event.motion.yrel * sensitivity;
 
-    if (this->camY > 90.0f)
-      this->camY = 90.0f;
-    if (this->camY < -90.0f)
-      this->camY = -90.0f;
+    if (this->rotY > 90.0f)
+      this->rotY = 90.0f;
+    if (this->rotY < -90.0f)
+      this->rotY = -90.0f;
   }
 }
 
 void Player::handleInput(const float& dt) {
   const bool *key_states = SDL_GetKeyboardState(nullptr);
-  float degrees = this->camX * M_PI / 180.0f;
+  float degrees = this->rotX * M_PI / 180.0f;
 
   if (key_states[SDL_SCANCODE_W]) {
     this->z -= std::cos(degrees) * playerSpeed * dt;
@@ -66,7 +66,7 @@ void Player::handleInput(const float& dt) {
 }
 
 void Player::updateCamera() {
-    calc::Mat4 rotation = calc::Mat4::MRotationY(camX * M_PI / 180.0f) *  calc::Mat4::MRotationX(camY * M_PI / 180.0f);;
+    calc::Mat4 rotation = calc::Mat4::MRotationY(rotX * M_PI / 180.0f) *  calc::Mat4::MRotationX(rotY * M_PI / 180.0f);
 
     calc::Mat4 translation = calc::Mat4::MIdentity();
     translation(0, 3) = -this->x;

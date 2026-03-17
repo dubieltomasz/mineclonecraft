@@ -2,7 +2,6 @@
 #include "../include/calc.hpp"
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_surface.h>
-#include <algorithm>
 #include <cstdint>
 #include <vector>
 
@@ -10,28 +9,6 @@
 #define windowHeight 600
 #define fov 90.0f
 #define texturesInTexture 4.0f
-
-Renderer::Color::Color(float r, float g, float b) {
-    this->r = r;
-    this->g = g;
-    this->b = b;
-}
-
-Renderer::Color Renderer::Color::Magenta() { return Renderer::Color(1.0f, 0.0f, 1.0f); }
-
-Renderer::Color Renderer::Color::Cyan() { return Renderer::Color(0.0f, 1.0f, 1.0f); }
-
-Renderer::Color Renderer::Color::Yellow() { return Renderer::Color(1.0f, 1.0f, 0.0f); }
-
-Renderer::Color Renderer::Color::White() { return Renderer::Color(1.0f, 1.0f, 1.0f); }
-
-Renderer::GameObject::GameObject(float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3, Color color) {
-  this->vertices = {{x1, y1, z1}, {x2, y2, z2}, {x3, y3, z3}};
-  this->normal = 0;
-  this->r = color.r;
-  this->b = color.b;
-  this->g = color.g;
-}
 
 void Renderer::addGlobalVertices(std::vector<SDL_Vertex>& v, const std::vector<std::tuple<float, float, float>> &vertices, const calc::Mat4& camera , float r, float b, float g) {
   for (const auto &[x, y, z] : vertices) {
@@ -60,8 +37,6 @@ void Renderer::addGlobalVertices(std::vector<SDL_Vertex>& v, const std::vector<s
 
 Renderer::Renderer(SDL_Window* window, int r, int g, int b) {
   this->renderer = SDL_CreateRenderer(window, NULL);
-  
-
   this->r = r;
   this->g = g;
   this->b = b;
@@ -71,66 +46,13 @@ Renderer::~Renderer() {
   SDL_DestroyRenderer(this->renderer);
 }
 
-void Renderer::render(const std::string& fps, int objects, std::vector<GameObject> triangles, const Player& player) {
-  SDL_SetRenderDrawColor(this->renderer, this->r, this->g, this->b, 255);
-  SDL_RenderClear(this->renderer);
-
-  std::vector<SDL_Vertex> vertices;
-  vertices.reserve(triangles.size() * 3);
-  
-  for (const GameObject &gameObject : triangles) {
-    addGlobalVertices(vertices, gameObject.vertices, player.camera, gameObject.r, gameObject.b, gameObject.g);
-  }
-
-  std::sort(
-    triangles.begin(),
-    triangles.end(),
-    [&](const GameObject &g1, const GameObject &g2) -> bool {
-      float sumX1 = 0.0f, sumY1 = 0.0f, sumZ1 = 0.0f;
-      float sumX2 = 0.0f, sumY2 = 0.0f, sumZ2 = 0.0f;
-
-      for (auto [x, y, z] : g1.vertices) {
-        sumX1 += x;
-        sumY1 += y;
-        sumZ1 += z;
-      }
-
-      sumX1 /= 3.0f;
-      sumY1 /= 3.0f;
-      sumZ1 /= 3.0f;
-
-      for (auto [x, y, z] : g2.vertices) {
-        sumX2 += x;
-        sumY2 += y;
-        sumZ2 += z;
-      }
-
-      sumX2 /= 3.0f;
-      sumY2 /= 3.0f;
-      sumZ2 /= 3.0f;
-
-      return (std::pow(player.x - sumX1, 2)
-        + std::pow(player.y - sumY1, 2)
-        + std::pow(player.z - sumZ1, 2)
-      ) > (std::pow(player.x - sumX2, 2)
-        + std::pow(player.y - sumY2, 2)
-        + std::pow(player.z - sumZ2, 2)
-      );
-    }
-  );
-
-  SDL_RenderGeometry(renderer, nullptr, vertices.data(), vertices.size(), nullptr, vertices.size());
-
-  SDL_SetRenderDrawColor(this->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-  SDL_RenderDebugText(this->renderer, 10, 10, ("FPS: " + fps).c_str());
-  SDL_RenderDebugText(this->renderer, 10, 20, ("Objects: " + std::to_string(objects)).c_str());
-
-  SDL_RenderPresent(this->renderer);
+bool Renderer::ok() {
+  return this->renderer != nullptr;
 }
 
 std::vector<SDL_Vertex> toGlobal(
   const std::vector<std::tuple<float, float, float>>& vertices,
-  const std::vector<std::pair<float, float>>& textures,
+  const std::vector<std::pair<float, float>>& texCoords,
   const std::vector<uint8_t>& normals,
   std::vector<int>& indices,
   const Player& player
@@ -199,10 +121,10 @@ std::vector<SDL_Vertex> toGlobal(
       continue;
     }
 
-    float v1 = textures[i].first / texturesInTexture - 1.0f / texturesInTexture;
-    float v2 = textures[i].first / texturesInTexture;
-    float u1 = textures[i].second / texturesInTexture - 1.0f / texturesInTexture;
-    float u2 = textures[i].first / texturesInTexture;
+    float v1 = texCoords[i].first / texturesInTexture - 1.0f / texturesInTexture;
+    float v2 = texCoords[i].first / texturesInTexture;
+    float u1 = texCoords[i].second / texturesInTexture - 1.0f / texturesInTexture;
+    float u2 = texCoords[i].first / texturesInTexture;
     //float tex1[4] = {v1, v1, v2, v2};
     //float tex2[4] = {u1, u2, u1, u2};
     float tex1[4] = {0.0f, 0.0f, 1.0f, 1.0f};
@@ -239,20 +161,40 @@ std::vector<SDL_Vertex> toGlobal(
   return result;
 }
 
-void Renderer::renderTerrain(const std::string& fps, int objects, const std::vector<std::tuple<float, float, float>>& vertices, const std::vector<std::pair<float, float>>& textures, const std::vector<uint8_t>& normals, const Player& player) {
+Renderer& Renderer::prepare() {
   SDL_SetRenderDrawColor(this->renderer, this->r, this->g, this->b, 255);
   SDL_RenderClear(this->renderer);
-  SDL_Surface *surface = SDL_LoadPNG("../textures/tri.png");
-  SDL_Texture *texture = SDL_CreateTextureFromSurface(this->renderer, surface);
+
+  return *this;
+}
+
+Renderer& Renderer::terrain(
+  const std::vector<std::tuple<float, float, float>>& vertices,
+  const std::vector<std::pair<float, float>>& textures,
+  const std::vector<uint8_t>& normals,
+  const Player& player
+) {
+  SDL_Surface* surface = SDL_LoadPNG("../textures/tri.png");
+  SDL_Texture* texture = SDL_CreateTextureFromSurface(this->renderer, surface);
 
   std::vector<int> indices = {};
   std::vector<SDL_Vertex> triangles = toGlobal(vertices, textures, normals, indices, player);
 
   SDL_RenderGeometry(renderer, texture, triangles.data(), triangles.size(), indices.data(), indices.size());
 
-  SDL_SetRenderDrawColor(this->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-  SDL_RenderDebugText(this->renderer, 10, 10, ("FPS: " + fps).c_str());
-  SDL_RenderDebugText(this->renderer, 10, 20, ("Objects: " + std::to_string(objects)).c_str());
+  return *this;
+}
 
+Renderer& Renderer::hud(const std::vector<std::string>& strings, const std::vector<std::pair<int, int>>& positions) {
+  SDL_SetRenderDrawColor(this->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+
+  for(size_t i = 0; i < strings.size(); ++i) {
+    SDL_RenderDebugText(this->renderer, positions[i].first, positions[i].second, strings[i].c_str());
+  }
+
+  return *this;
+}
+
+void Renderer::render() {
   SDL_RenderPresent(this->renderer);
 }
