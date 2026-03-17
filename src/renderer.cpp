@@ -2,37 +2,16 @@
 #include "../include/calc.hpp"
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_surface.h>
-#include <cstdint>
 #include <vector>
 
 #define windowWidth 800
 #define windowHeight 600
 #define fov 90.0f
-#define texturesInTexture 4.0f
+#define texturesInTexture 4
 
-void Renderer::addGlobalVertices(std::vector<SDL_Vertex>& v, const std::vector<std::tuple<float, float, float>> &vertices, const calc::Mat4& camera , float r, float b, float g) {
-  for (const auto &[x, y, z] : vertices) {
-    calc::Vec4 vertexGlobal(x, y, z, 1.0f);
-    calc::Vec4 vertexCamera = camera * vertexGlobal;
-
-    if (vertexCamera.z >= 0.0f) {
-      continue;
-    }
-
-    float f = 1.0f / std::tan((fov * 0.5f) * M_PI / 180.0f);
-    float dx = (vertexCamera.x) * f / -vertexCamera.z;
-    float dy = (vertexCamera.y) * f / -vertexCamera.z;
-
-    SDL_Vertex newVertex = {};
-    newVertex.position.x = dx * (windowWidth * 0.5f) + windowWidth * 0.5f;
-    newVertex.position.y = -dy * (windowHeight * 0.5f) + windowHeight * 0.5f;
-    newVertex.color.a = 1.0f;
-    newVertex.color.r = r;
-    newVertex.color.b = b;
-    newVertex.color.g = g;
-
-    v.push_back(newVertex);
-  }
+namespace id {
+std::vector<int> indices = {};
+std::vector<SDL_Vertex> triangles = {};
 }
 
 Renderer::Renderer(SDL_Window* window, int r, int g, int b) {
@@ -40,9 +19,13 @@ Renderer::Renderer(SDL_Window* window, int r, int g, int b) {
   this->r = r;
   this->g = g;
   this->b = b;
+  SDL_Surface* surface = SDL_LoadPNG("../textures/tri.png");
+  this->texture = SDL_CreateTextureFromSurface(this->renderer, surface);
+  SDL_DestroySurface(surface);
 }
 
 Renderer::~Renderer() {
+  SDL_DestroyTexture(this->texture);
   SDL_DestroyRenderer(this->renderer);
 }
 
@@ -50,52 +33,79 @@ bool Renderer::ok() {
   return this->renderer != nullptr;
 }
 
-std::vector<SDL_Vertex> toGlobal(
-  const std::vector<std::tuple<float, float, float>>& vertices,
-  const std::vector<std::pair<float, float>>& texCoords,
-  const std::vector<uint8_t>& normals,
+std::vector<SDL_Vertex> Renderer::makeTrianglesWithIndices(
+  const std::vector<Surfacea>& surfaces,
   std::vector<int>& indices,
   const Player& player
 ) {
   std::vector<SDL_Vertex> result = {};
-  float f = 1.0f / std::tan((fov * 0.5f) * M_PI / 180.0f);
+  float f = 1.0f / std::tan((fov * 0.5f) * M_PI / 180.0f), ww = windowWidth * 0.5f, wh = windowHeight * 0.5f;
   indices.clear();
+  indices.reserve(8 * 16 * 16);
   int index = 0;
 
-  for (size_t i = 0; i < normals.size(); ++i) {
-    size_t vi0 = i << 2, vi1 = vi0 + 1, vi2 = vi1 + 1, vi3 = vi2 + 1;
+  for (const Surfacea& surface : surfaces) {
+    calc::Vec4 vertexGlobal[4];
 
     bool ok = true;
-    switch(normals[i]) {
-      case 1:
-        if(player.y > std::get<1>(vertices[vi0])) {
+    switch(surface.texCorAndNormal & 0b111) {
+      case 0b000:
+        if(player.y > surface.y) {
           ok = false;
         }
+        vertexGlobal[0] = {surface.x, surface.y, surface.z, 1.0f};
+        vertexGlobal[1] = {surface.x + 1, surface.y, surface.z, 1.0f};
+        vertexGlobal[2] = {surface.x, surface.y, surface.z + 1, 1.0f};
+        vertexGlobal[3] = {surface.x + 1, surface.y, surface.z + 1, 1.0f};
+       
         break;
-      case 2:
-        if(player.x > std::get<0>(vertices[vi0])) {
+      case 0b001:
+        if(player.x > surface.x) {
           ok = false;
         }
+        vertexGlobal[0] = {surface.x, surface.y, surface.z, 1.0f};
+        vertexGlobal[1] = {surface.x, surface.y + 1, surface.z, 1.0f};
+        vertexGlobal[2] = {surface.x, surface.y, surface.z + 1, 1.0f};
+        vertexGlobal[3] = {surface.x, surface.y + 1, surface.z + 1, 1.0f};
+
         break;
-      case 4:
-        if(player.z > std::get<2>(vertices[vi0])) {
+      case 0b010:
+        if(player.z > surface.z) {
           ok = false;
         }
+        vertexGlobal[0] = {surface.x, surface.y, surface.z, 1.0f};
+        vertexGlobal[1] = {surface.x + 1, surface.y, surface.z, 1.0f};
+        vertexGlobal[2] = {surface.x, surface.y + 1, surface.z, 1.0f};
+        vertexGlobal[3] = {surface.x + 1, surface.y + 1, surface.z, 1.0f};
         break;
-      case 8:
-        if(player.y < std::get<1>(vertices[vi0])) {
+      case 0b100:
+        if(player.y < surface.y) {
           ok = false;
         }
+        vertexGlobal[0] = {surface.x, surface.y + 1, surface.z, 1.0f};
+        vertexGlobal[1] = {surface.x + 1, surface.y + 1, surface.z, 1.0f};
+        vertexGlobal[2] = {surface.x, surface.y + 1, surface.z + 1, 1.0f};
+        vertexGlobal[3] = {surface.x + 1, surface.y + 1, surface.z + 1, 1.0f};
+       
         break;
-      case 16:
-        if(player.x < std::get<0>(vertices[vi0])) {
+      case 0b101:
+        if(player.x < surface.x) {
           ok = false;
         }
+        vertexGlobal[0] = {surface.x + 1, surface.y, surface.z, 1.0f};
+        vertexGlobal[1] = {surface.x + 1, surface.y + 1, surface.z, 1.0f};
+        vertexGlobal[2] = {surface.x + 1, surface.y, surface.z + 1, 1.0f};
+        vertexGlobal[3] = {surface.x + 1, surface.y + 1, surface.z + 1, 1.0f};
+
         break;
-      case 32:
-        if(player.z < std::get<2>(vertices[vi0])) {
+      case 0b110:
+        if(player.z < surface.z) {
           ok = false;
         }
+        vertexGlobal[0] = {surface.x, surface.y, surface.z + 1, 1.0f};
+        vertexGlobal[1] = {surface.x + 1, surface.y, surface.z + 1, 1.0f};
+        vertexGlobal[2] = {surface.x, surface.y + 1, surface.z + 1, 1.0f};
+        vertexGlobal[3] = {surface.x + 1, surface.y + 1, surface.z + 1, 1.0f};
         break;
     }
 
@@ -103,28 +113,22 @@ std::vector<SDL_Vertex> toGlobal(
       continue;
     }
 
-    calc::Vec4 vertexGlobal[4] = {
-      {std::get<0>(vertices[vi0]), std::get<1>(vertices[vi0]), std::get<2>(vertices[vi0]), 1.0f},
-      {std::get<0>(vertices[vi1]), std::get<1>(vertices[vi1]), std::get<2>(vertices[vi1]), 1.0f},
-      {std::get<0>(vertices[vi2]), std::get<1>(vertices[vi2]), std::get<2>(vertices[vi2]), 1.0f},
-      {std::get<0>(vertices[vi3]), std::get<1>(vertices[vi3]), std::get<2>(vertices[vi3]), 1.0f},
-    };
-
     calc::Vec4 vertexCamera[4] = {
       player.camera * vertexGlobal[0],
       player.camera * vertexGlobal[1],
       player.camera * vertexGlobal[2],
       player.camera * vertexGlobal[3],
     };
-    
+
     if (vertexCamera[0].z >= 0.0f || vertexCamera[1].z >= 0.0f || vertexCamera[2].z >= 0.0f || vertexCamera[3].z >= 0.0f) {
       continue;
     }
 
-    float v1 = texCoords[i].first / texturesInTexture - 1.0f / texturesInTexture;
-    float v2 = texCoords[i].first / texturesInTexture;
-    float u1 = texCoords[i].second / texturesInTexture - 1.0f / texturesInTexture;
-    float u2 = texCoords[i].first / texturesInTexture;
+    int inx = surface.texCorAndNormal >> (32-8);
+    float v1 = static_cast<float>(inx) / texturesInTexture;
+    float v2 = v1 + 1.0f / texturesInTexture;
+    float u1 = inx % texturesInTexture;
+    float u2 = u1 + 1.0f / texturesInTexture;
     //float tex1[4] = {v1, v1, v2, v2};
     //float tex2[4] = {u1, u2, u1, u2};
     float tex1[4] = {0.0f, 0.0f, 1.0f, 1.0f};
@@ -135,11 +139,8 @@ std::vector<SDL_Vertex> toGlobal(
       float dy = (vertexCamera[j].y) * f / -vertexCamera[j].z;
 
       result.push_back({
-        dx * (windowWidth * 0.5f) + windowWidth * 0.5f,
-        -dy * (windowHeight * 0.5f) + windowHeight * 0.5f,/*
-        std::get<0>(textures[i * 2]),
-        std::get<1>(textures[i * 2]),
-        std::get<2>(textures[i * 2]),*/
+        dx * ww + ww,
+        -dy * wh + wh,
         1.0f,
         1.0f,
         1.0f,
@@ -169,18 +170,12 @@ Renderer& Renderer::prepare() {
 }
 
 Renderer& Renderer::terrain(
-  const std::vector<std::tuple<float, float, float>>& vertices,
-  const std::vector<std::pair<float, float>>& textures,
-  const std::vector<uint8_t>& normals,
+  const std::vector<Surfacea>& surfaces,
   const Player& player
 ) {
-  SDL_Surface* surface = SDL_LoadPNG("../textures/tri.png");
-  SDL_Texture* texture = SDL_CreateTextureFromSurface(this->renderer, surface);
+  id::triangles = makeTrianglesWithIndices(surfaces, id::indices, player);
 
-  std::vector<int> indices = {};
-  std::vector<SDL_Vertex> triangles = toGlobal(vertices, textures, normals, indices, player);
-
-  SDL_RenderGeometry(renderer, texture, triangles.data(), triangles.size(), indices.data(), indices.size());
+  SDL_RenderGeometry(this->renderer, this->texture, id::triangles.data(), id::triangles.size(), id::indices.data(), id::indices.size());
 
   return *this;
 }

@@ -7,11 +7,15 @@
 #include <string>
 #include <vector>
 
+struct Surfacea {
+  float x, y, z;
+  uint32_t texCorAndNormal;
+};
+
 class Renderer {
 public:
-  void addGlobalVertices(std::vector<SDL_Vertex>& v, const std::vector<std::tuple<float, float, float>> &vertices, const calc::Mat4& camera , float r, float b, float g);
-
   SDL_Renderer* renderer;
+  SDL_Texture* texture;
   int r, g, b;
 
   Renderer(SDL_Window* window, int r, int g, int b);
@@ -20,9 +24,11 @@ public:
 
   bool ok();
 
+  std::vector<SDL_Vertex> makeTrianglesWithIndices(const std::vector<Surfacea>& surfaces, std::vector<int>& indices, const Player& player);
+
   Renderer& prepare();
 
-  Renderer& terrain(const std::vector<std::tuple<float, float, float>>& vertices, const std::vector<std::pair<float, float>>& texCoords, const std::vector<uint8_t>& normals, const Player& player);
+  Renderer& terrain(const std::vector<Surfacea>& surfaces, const Player& player);
 
   Renderer& hud(const std::vector<std::string>& strings, const std::vector<std::pair<int, int>>& positions);
 

@@ -27,6 +27,8 @@ public:
 
   Vec4(std::array<float, 4> values);
 
+  Vec4();
+
   Vec4(float value);
 
   float magnitude() const;

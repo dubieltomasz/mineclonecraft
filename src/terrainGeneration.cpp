@@ -1,8 +1,7 @@
 #include "../include/terrainGeneration.hpp"
 #include <random>
-#include <math.h>
+#include <vector>
 
-namespace terrainGeneration {
 // https://www.youtube.com/watch?v=gsJHzBTPG0Y
 constexpr std::array<int, 256> grid = {
     151, 160, 137, 91,  90,  15,  131, 13,  201, 95,  96,  53,  194, 233, 7,
@@ -24,7 +23,7 @@ constexpr std::array<int, 256> grid = {
     222, 114, 67,  29,  24,  72,  243, 141, 128, 195, 78,  66,  215, 61,  156,
     180};
 
-std::array<calc::Vec2, 256> vectors(uint64_t seed) {
+std::array<calc::Vec2, 256> terrainGeneration::vectors(uint64_t seed) {
   std::mt19937 rd(seed);
   std::uniform_real_distribution<float> urd(0.0f, 1.0f);
   std::array<calc::Vec2, 256> vectors;
@@ -36,7 +35,7 @@ std::array<calc::Vec2, 256> vectors(uint64_t seed) {
   return vectors;
 }
 
-float noise(float x, float y, const std::array<calc::Vec2, 256> &vectors) {
+float terrainGeneration::noise(float x, float y, const std::array<calc::Vec2, 256> &vectors) {
   // https://www.youtube.com/watch?v=DxUY42r_6Cg
   int x0 = std::floor(x), x1 = x0 + 1;
   int y0 = std::floor(y), y1 = y0 + 1;
@@ -59,4 +58,133 @@ float noise(float x, float y, const std::array<calc::Vec2, 256> &vectors) {
     smoothstep(y - y0)
   );
 }
-} // namespace terrainGeneration
+terrainGeneration::Terrain::Terrain() {
+  this->xs = {};
+  this->ys = {};
+  this->zs = {};
+  this->texX = {};
+  this->texY = {};
+  this->normals = {};
+}
+
+inline void terrainGeneration::Terrain::loadVertex(int x, int y, int z) {
+  this->xs.push_back(x);
+  this->ys.push_back(y);
+  this->zs.push_back(z);
+}
+
+void terrainGeneration::Terrain::loadChunk(const Chunk& chunk) {
+  for(int chunkY = 0; chunkY < 16; ++chunkY) {
+    for(int chunkX = 0; chunkX < 16; ++chunkX) {
+      for(int chunkZ = 0; chunkZ < 16; ++chunkZ) {
+        if(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)] != 0) {
+          //bot
+          loadVertex(chunk.x + chunkX, chunk.y + chunkY, chunk.z + chunkZ);
+          loadVertex(chunk.x + chunkX + 1, chunk.y + chunkY, chunk.z + chunkZ);
+          loadVertex(chunk.x + chunkX, chunk.y + chunkY, chunk.z + chunkZ + 1);
+          loadVertex(chunk.x + chunkX + 1, chunk.y + chunkY, chunk.z + chunkZ + 1);
+          this->texX.push_back(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]);
+          this->texY.push_back(1.0f);
+          this->normals.push_back(1);
+
+          //left
+          loadVertex(chunk.x + chunkX, chunk.y + chunkY, chunk.z + chunkZ);
+          loadVertex(chunk.x + chunkX, chunk.y + chunkY + 1, chunk.z + chunkZ);
+          loadVertex(chunk.x + chunkX, chunk.y + chunkY, chunk.z + chunkZ + 1);
+          loadVertex(chunk.x + chunkX, chunk.y + chunkY + 1, chunk.z + chunkZ + 1);
+          this->texX.push_back(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]);
+          this->texY.push_back(1.0f);
+          normals.push_back(2);
+
+          //back
+          loadVertex(chunk.x + chunkX, chunk.y + chunkY, chunk.z + chunkZ);
+          loadVertex(chunk.x + chunkX + 1, chunk.y + chunkY, chunk.z + chunkZ);
+          loadVertex(chunk.x + chunkX, chunk.y + chunkY + 1, chunk.z + chunkZ);
+          loadVertex(chunk.x + chunkX + 1, chunk.y + chunkY + 1, chunk.z + chunkZ);
+          this->texX.push_back(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]);
+          this->texY.push_back(1.0f);
+          normals.push_back(4);
+
+          //top
+          loadVertex(chunk.x + chunkX, chunk.y + chunkY + 1, chunk.z + chunkZ);
+          loadVertex(chunk.x + chunkX + 1, chunk.y + chunkY + 1, chunk.z + chunkZ);
+          loadVertex(chunk.x + chunkX, chunk.y + chunkY + 1, chunk.z + chunkZ + 1);
+          loadVertex(chunk.x + chunkX + 1, chunk.y + chunkY + 1, chunk.z + chunkZ + 1);
+          this->texX.push_back(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]);
+          this->texY.push_back(1.0f);
+          normals.push_back(8);
+
+          //right
+          loadVertex(chunk.x + chunkX + 1, chunk.y + chunkY, chunk.z + chunkZ);
+          loadVertex(chunk.x + chunkX + 1, chunk.y + chunkY + 1, chunk.z + chunkZ);
+          loadVertex(chunk.x + chunkX + 1, chunk.y + chunkY, chunk.z + chunkZ + 1);
+          loadVertex(chunk.x + chunkX + 1, chunk.y + chunkY + 1, chunk.z + chunkZ + 1);
+          this->texX.push_back(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]);
+          this->texY.push_back(1.0f);
+          normals.push_back(16);
+
+          //front
+          loadVertex(chunk.x + chunkX, chunk.y + chunkY, chunk.z + chunkZ + 1);
+          loadVertex(chunk.x + chunkX + 1, chunk.y + chunkY, chunk.z + chunkZ + 1);
+          loadVertex(chunk.x + chunkX, chunk.y + chunkY + 1, chunk.z + chunkZ + 1);
+          loadVertex(chunk.x + chunkX + 1, chunk.y + chunkY + 1, chunk.z + chunkZ + 1);
+          this->texX.push_back(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]);
+          this->texY.push_back(1.0f);
+          normals.push_back(32);
+        }
+      }
+    }
+  }
+}
+
+void terrainGeneration::surfacesFromChunks(std::vector<Surfacea> &surfaces, const std::vector<Chunk> &chunks) {
+  surfaces.reserve(surfaces.size() + 6 * 16 * 16);
+
+  for(const Chunk& chunk : chunks) {
+    for(int chunkY = 0; chunkY < 16; ++chunkY) {
+      for(int chunkX = 0; chunkX < 16; ++chunkX) {
+        for(int chunkZ = 0; chunkZ < 16; ++chunkZ) {
+          if(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)] != 0) {
+            //bot
+            surfaces.push_back({
+              static_cast<float>(chunk.x + chunkX),
+              static_cast<float>(chunk.y + chunkY),
+              static_cast<float>(chunk.z + chunkZ),
+              (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | 0b000
+            });
+            surfaces.push_back({
+              static_cast<float>(chunk.x + chunkX),
+              static_cast<float>(chunk.y + chunkY),
+              static_cast<float>(chunk.z + chunkZ),
+              (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | 0b001
+            });
+            surfaces.push_back({
+              static_cast<float>(chunk.x + chunkX),
+              static_cast<float>(chunk.y + chunkY),
+              static_cast<float>(chunk.z + chunkZ),
+              (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | 0b010
+            });
+            surfaces.push_back({
+              static_cast<float>(chunk.x + chunkX),
+              static_cast<float>(chunk.y + chunkY),
+              static_cast<float>(chunk.z + chunkZ),
+              (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | 0b100
+            });
+            surfaces.push_back({
+              static_cast<float>(chunk.x + chunkX),
+              static_cast<float>(chunk.y + chunkY),
+              static_cast<float>(chunk.z + chunkZ),
+              (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | 0b101
+            });
+            surfaces.push_back({
+              static_cast<float>(chunk.x + chunkX),
+              static_cast<float>(chunk.y + chunkY),
+              static_cast<float>(chunk.z + chunkZ),
+              (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | 0b110
+            });
+          }
+        }
+      }
+    }
+  }
+}

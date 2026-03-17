@@ -28,6 +28,13 @@ Vec4::Vec4(float x, float y, float z, float w) {
   this->w = w;
 }
 
+Vec4::Vec4() {
+  this->x = 0.0f;
+  this->y = 0.0f;
+  this->z = 0.0f;
+  this->w = 0.0f;
+}
+
 Vec4::Vec4(std::array<float, 4> values) {
   this->x = values[0];
   this->y = values[1];

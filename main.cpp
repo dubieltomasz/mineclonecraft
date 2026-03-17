@@ -19,6 +19,7 @@
 #include <SDL3/SDL_video.h>
 #include <cmath>
 #include <string>
+#include <vector>
 
 #define windowWidth 800
 #define windowHeight 600
@@ -61,13 +62,13 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::vector<std::tuple<float, float, float>> vertices = {};
-  std::vector<std::pair<float, float>> textures = {};
-  std::vector<uint8_t> normals = {};
-
+  terrainGeneration::Terrain terrain = terrainGeneration::Terrain();
   for(const Chunk& chunk : chunks) {
-    chunk.loadChunk(vertices, textures, normals);
+    terrain.loadChunk(chunk);
   }
+
+  std::vector<Surfacea> surfaces = {};
+  terrainGeneration::surfacesFromChunks(surfaces, chunks);
 
   SDL_Event event;
   while (!shouldClose) {  
@@ -96,7 +97,7 @@ int main(int argc, char *argv[]) {
 
     renderer
       .prepare()
-      .terrain(vertices, textures, normals, player)
+      .terrain(surfaces, player)
       .hud({fps, std::to_string(chunks.size())}, {{0, 0}, {0, 10}})
       .render();
   }
