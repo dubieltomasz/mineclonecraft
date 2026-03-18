@@ -33,4 +33,14 @@ public:
   Renderer& hud(const std::vector<std::string>& strings, const std::vector<std::pair<int, int>>& positions);
 
   void render();
+
+  enum surfaceDirection : uint32_t {
+    FaceBottom = 0b000,
+    FaceLeft,
+    FaceBack,
+    FaceTop = 0b100,
+    FaceRight,
+    FaceFront,
+    SurfaceNormal = 0b111
+  };
 };

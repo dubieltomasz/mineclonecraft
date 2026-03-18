@@ -144,44 +144,61 @@ void terrainGeneration::surfacesFromChunks(std::vector<Surfacea> &surfaces, cons
     for(int chunkY = 0; chunkY < 16; ++chunkY) {
       for(int chunkX = 0; chunkX < 16; ++chunkX) {
         for(int chunkZ = 0; chunkZ < 16; ++chunkZ) {
-          if(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)] != 0) {
+          if(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)] != Block::Air) {
             //bot
-            surfaces.push_back({
-              static_cast<float>(chunk.x + chunkX),
-              static_cast<float>(chunk.y + chunkY),
-              static_cast<float>(chunk.z + chunkZ),
-              (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | 0b000
-            });
-            surfaces.push_back({
-              static_cast<float>(chunk.x + chunkX),
-              static_cast<float>(chunk.y + chunkY),
-              static_cast<float>(chunk.z + chunkZ),
-              (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | 0b001
-            });
-            surfaces.push_back({
-              static_cast<float>(chunk.x + chunkX),
-              static_cast<float>(chunk.y + chunkY),
-              static_cast<float>(chunk.z + chunkZ),
-              (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | 0b010
-            });
-            surfaces.push_back({
-              static_cast<float>(chunk.x + chunkX),
-              static_cast<float>(chunk.y + chunkY),
-              static_cast<float>(chunk.z + chunkZ),
-              (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | 0b100
-            });
-            surfaces.push_back({
-              static_cast<float>(chunk.x + chunkX),
-              static_cast<float>(chunk.y + chunkY),
-              static_cast<float>(chunk.z + chunkZ),
-              (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | 0b101
-            });
-            surfaces.push_back({
-              static_cast<float>(chunk.x + chunkX),
-              static_cast<float>(chunk.y + chunkY),
-              static_cast<float>(chunk.z + chunkZ),
-              (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | 0b110
-            });
+            if(chunkY == 0 || chunk.blocks[chunkZ + (chunkX << 4) + ((chunkY - 1) << 8)] == Block::Air) {
+              surfaces.push_back({
+                static_cast<float>(chunk.x + chunkX),
+                static_cast<float>(chunk.y + chunkY),
+                static_cast<float>(chunk.z + chunkZ),
+                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | Renderer::FaceBottom
+              });
+            }
+            //left
+            if(chunkX == 0 || chunk.blocks[chunkZ + ((chunkX - 1) << 4) + (chunkY << 8)] == Block::Air) {
+              surfaces.push_back({
+                static_cast<float>(chunk.x + chunkX),
+                static_cast<float>(chunk.y + chunkY),
+                static_cast<float>(chunk.z + chunkZ),
+                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | Renderer::FaceLeft
+              });
+            }
+            //back
+            if(chunkZ == 0 || chunk.blocks[(chunkZ - 1) + (chunkX << 4) + (chunkY << 8)] == Block::Air) {
+              surfaces.push_back({
+                static_cast<float>(chunk.x + chunkX),
+                static_cast<float>(chunk.y + chunkY),
+                static_cast<float>(chunk.z + chunkZ),
+                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | Renderer::FaceBack
+              });
+            }
+            //top
+            if(chunkY == 15 || chunk.blocks[chunkZ + (chunkX << 4) + ((chunkY + 1) << 8)] == Block::Air) {
+              surfaces.push_back({
+                static_cast<float>(chunk.x + chunkX),
+                static_cast<float>(chunk.y + chunkY),
+                static_cast<float>(chunk.z + chunkZ),
+                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | Renderer::FaceTop
+              });
+            }
+            //right
+            if(chunkX == 15 || chunk.blocks[chunkZ + ((chunkX + 1) << 4) + (chunkY << 8)] == Block::Air) {
+              surfaces.push_back({
+                static_cast<float>(chunk.x + chunkX),
+                static_cast<float>(chunk.y + chunkY),
+                static_cast<float>(chunk.z + chunkZ),
+                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | Renderer::FaceRight
+              });
+            }
+            //front
+            if(chunkZ == 15 || chunk.blocks[(chunkZ + 1) + (chunkX << 4) + (chunkY << 8)] == Block::Air) {
+              surfaces.push_back({
+                static_cast<float>(chunk.x + chunkX),
+                static_cast<float>(chunk.y + chunkY),
+                static_cast<float>(chunk.z + chunkZ),
+                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | Renderer::FaceFront
+              });
+            }
           }
         }
       }

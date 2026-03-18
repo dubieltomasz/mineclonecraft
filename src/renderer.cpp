@@ -1,13 +1,15 @@
 #include "../include/renderer.hpp"
 #include "../include/calc.hpp"
+#include <SDL3/SDL_oldnames.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_surface.h>
+#include <string>
 #include <vector>
 
 #define windowWidth 800
 #define windowHeight 600
 #define fov 90.0f
-#define texturesInTexture 4
+#define texturesInTexture 4.0f
 
 namespace id {
 std::vector<int> indices = {};
@@ -19,8 +21,9 @@ Renderer::Renderer(SDL_Window* window, int r, int g, int b) {
   this->r = r;
   this->g = g;
   this->b = b;
-  SDL_Surface* surface = SDL_LoadPNG("../textures/tri.png");
+  SDL_Surface* surface = SDL_LoadPNG("../textures/tex.png");
   this->texture = SDL_CreateTextureFromSurface(this->renderer, surface);
+  SDL_SetTextureScaleMode(this->texture, SDL_SCALEMODE_NEAREST);
   SDL_DestroySurface(surface);
 }
 
@@ -48,8 +51,8 @@ std::vector<SDL_Vertex> Renderer::makeTrianglesWithIndices(
     calc::Vec4 vertexGlobal[4];
 
     bool ok = true;
-    switch(surface.texCorAndNormal & 0b111) {
-      case 0b000:
+    switch(surface.texCorAndNormal & SurfaceNormal) {
+      case FaceBottom:
         if(player.y > surface.y) {
           ok = false;
         }
@@ -59,7 +62,7 @@ std::vector<SDL_Vertex> Renderer::makeTrianglesWithIndices(
         vertexGlobal[3] = {surface.x + 1, surface.y, surface.z + 1, 1.0f};
        
         break;
-      case 0b001:
+      case FaceLeft:
         if(player.x > surface.x) {
           ok = false;
         }
@@ -69,7 +72,7 @@ std::vector<SDL_Vertex> Renderer::makeTrianglesWithIndices(
         vertexGlobal[3] = {surface.x, surface.y + 1, surface.z + 1, 1.0f};
 
         break;
-      case 0b010:
+      case FaceBack:
         if(player.z > surface.z) {
           ok = false;
         }
@@ -78,7 +81,7 @@ std::vector<SDL_Vertex> Renderer::makeTrianglesWithIndices(
         vertexGlobal[2] = {surface.x, surface.y + 1, surface.z, 1.0f};
         vertexGlobal[3] = {surface.x + 1, surface.y + 1, surface.z, 1.0f};
         break;
-      case 0b100:
+      case FaceTop:
         if(player.y < surface.y) {
           ok = false;
         }
@@ -88,7 +91,7 @@ std::vector<SDL_Vertex> Renderer::makeTrianglesWithIndices(
         vertexGlobal[3] = {surface.x + 1, surface.y + 1, surface.z + 1, 1.0f};
        
         break;
-      case 0b101:
+      case FaceRight:
         if(player.x < surface.x) {
           ok = false;
         }
@@ -98,7 +101,7 @@ std::vector<SDL_Vertex> Renderer::makeTrianglesWithIndices(
         vertexGlobal[3] = {surface.x + 1, surface.y + 1, surface.z + 1, 1.0f};
 
         break;
-      case 0b110:
+      case FaceFront:
         if(player.z < surface.z) {
           ok = false;
         }
@@ -125,14 +128,15 @@ std::vector<SDL_Vertex> Renderer::makeTrianglesWithIndices(
     }
 
     int inx = surface.texCorAndNormal >> (32-8);
-    float v1 = static_cast<float>(inx) / texturesInTexture;
-    float v2 = v1 + 1.0f / texturesInTexture;
-    float u1 = inx % texturesInTexture;
-    float u2 = u1 + 1.0f / texturesInTexture;
-    //float tex1[4] = {v1, v1, v2, v2};
-    //float tex2[4] = {u1, u2, u1, u2};
-    float tex1[4] = {0.0f, 0.0f, 1.0f, 1.0f};
-    float tex2[4] = {0.0f, 1.0f, 0.0f, 1.0f};
+    float tileSize = 1.0f / texturesInTexture, padding = 0.01f;
+
+    float v1 = inx / tileSize, v2 = v1 + tileSize;
+    float u1 = std::fmod(inx, texturesInTexture) * tileSize, u2 = u1 + tileSize;
+
+    float tex1[4] = {v1, v1, v2, v2};
+    float tex2[4] = {u1, u2, u1, u2};
+    //float tex1[4] = {0.0f, 0.0f, 1.0f, 1.0f};
+    //float tex2[4] = {0.0f, 1.0f, 0.0f, 1.0f};
 
     for(size_t j = 0; j < 4; ++j) {
       float dx = (vertexCamera[j].x) * f / -vertexCamera[j].z;
@@ -145,8 +149,8 @@ std::vector<SDL_Vertex> Renderer::makeTrianglesWithIndices(
         1.0f,
         1.0f,
         1.0f,
-        tex1[j],
         tex2[j],
+        tex1[j],
       });
     }
 

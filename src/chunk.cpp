@@ -25,7 +25,7 @@ Chunk::Chunk(int x, int y, int z, const std::array<calc::Vec2, 256>& v, float sc
               v
           ) + 1.0f ) * 0.5f * 15.0f
         )
-      ) << 8)] = 1;
+      ) << 8)] = Block::Dirt;
     }
   }
 }
