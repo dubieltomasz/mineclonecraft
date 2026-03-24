@@ -14,7 +14,7 @@ public:
 
   Vec2(const float& x1, const float& y1, const float& x2, const float& y2);
 
-  Vec2(float theta);// theta in <0,1>
+  Vec2(float theta);
 
   float operator*(const Vec2 &v) const;
 };

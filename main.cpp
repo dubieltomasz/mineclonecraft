@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     terrain.loadChunk(chunk);
   }
 
-  std::vector<Surfacea> surfaces = {};
+  std::vector<Surface> surfaces = {};
   terrainGeneration::surfacesFromChunks(surfaces, chunks);
 
   SDL_Event event;

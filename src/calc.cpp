@@ -11,7 +11,7 @@ Vec2::Vec2(const float& x1, const float& y1, const float& x2, const float& y2) {
   this->y = y2 - y1;
 }
 
-Vec2::Vec2(float theta) { // theta in <0,1>
+Vec2::Vec2(float theta) {
   theta *= 2.0 * M_PI;
   this->x = std::cos(theta);
   this->y = std::sin(theta);

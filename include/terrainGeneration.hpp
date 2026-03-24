@@ -31,8 +31,8 @@ public:
   
   inline void loadVertex(int x, int y, int z);
 
-  std::vector<Surfacea> terrainToSurfaces();
+  std::vector<Surface> terrainToSurfaces();
 };
 
-void surfacesFromChunks(std::vector<Surfacea>& surfaces, const std::vector<Chunk>& chunks);
+void surfacesFromChunks(std::vector<Surface>& surfaces, const std::vector<Chunk>& chunks);
 } // namespace terrainGeneration

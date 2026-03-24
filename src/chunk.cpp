@@ -16,8 +16,7 @@ Chunk::Chunk(int x, int y, int z, const std::array<calc::Vec2, 256>& v, float sc
 
   for(int chunkX = 0; chunkX < 16; ++chunkX) {
     for(int chunkZ = 0; chunkZ < 16; ++chunkZ) {
-      this->blocks[chunkZ + (chunkX << 4) + (
-        static_cast<int>(
+      int height = static_cast<int>(
           std::round(
             (terrainGeneration::noise(
               (this->x + static_cast<float>(chunkX)) * scale,
@@ -25,7 +24,12 @@ Chunk::Chunk(int x, int y, int z, const std::array<calc::Vec2, 256>& v, float sc
               v
           ) + 1.0f ) * 0.5f * 15.0f
         )
-      ) << 8)] = Block::Dirt;
+      );
+      this->blocks[chunkZ + (chunkX << 4) + (height << 8)] = Block::Dirt;
+
+      for(int chunkY = 0; chunkY < height; ++chunkY) {
+        this->blocks[chunkZ + (chunkX << 4) + (chunkY << 8)] = Block::Stone;
+      }
     }
   }
 }

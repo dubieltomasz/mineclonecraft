@@ -1,4 +1,5 @@
 #include "../include/terrainGeneration.hpp"
+#include <cstdint>
 #include <random>
 #include <vector>
 
@@ -137,7 +138,7 @@ void terrainGeneration::Terrain::loadChunk(const Chunk& chunk) {
   }
 }
 
-void terrainGeneration::surfacesFromChunks(std::vector<Surfacea> &surfaces, const std::vector<Chunk> &chunks) {
+void terrainGeneration::surfacesFromChunks(std::vector<Surface> &surfaces, const std::vector<Chunk> &chunks) {
   surfaces.reserve(surfaces.size() + 6 * 16 * 16);
 
   for(const Chunk& chunk : chunks) {
@@ -151,7 +152,12 @@ void terrainGeneration::surfacesFromChunks(std::vector<Surfacea> &surfaces, cons
                 static_cast<float>(chunk.x + chunkX),
                 static_cast<float>(chunk.y + chunkY),
                 static_cast<float>(chunk.z + chunkZ),
-                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | Renderer::FaceBottom
+                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8))
+                | Renderer::AO::NotDark << 3
+                | Renderer::AO::NotDark << 5
+                | Renderer::AO::NotDark << 7
+                | Renderer::AO::NotDark << 9
+                | Renderer::FaceBottom
               });
             }
             //left
@@ -160,7 +166,12 @@ void terrainGeneration::surfacesFromChunks(std::vector<Surfacea> &surfaces, cons
                 static_cast<float>(chunk.x + chunkX),
                 static_cast<float>(chunk.y + chunkY),
                 static_cast<float>(chunk.z + chunkZ),
-                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | Renderer::FaceLeft
+                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8))
+                | Renderer::AO::NotDark << 3
+                | Renderer::AO::NotDark << 5
+                | Renderer::AO::NotDark << 7
+                | Renderer::AO::NotDark << 9
+                | Renderer::FaceLeft
               });
             }
             //back
@@ -169,7 +180,12 @@ void terrainGeneration::surfacesFromChunks(std::vector<Surfacea> &surfaces, cons
                 static_cast<float>(chunk.x + chunkX),
                 static_cast<float>(chunk.y + chunkY),
                 static_cast<float>(chunk.z + chunkZ),
-                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | Renderer::FaceBack
+                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8))
+                | Renderer::AO::NotDark << 3
+                | Renderer::AO::NotDark << 5
+                | Renderer::AO::NotDark << 7
+                | Renderer::AO::NotDark << 9
+                | Renderer::FaceBack
               });
             }
             //top
@@ -178,7 +194,12 @@ void terrainGeneration::surfacesFromChunks(std::vector<Surfacea> &surfaces, cons
                 static_cast<float>(chunk.x + chunkX),
                 static_cast<float>(chunk.y + chunkY),
                 static_cast<float>(chunk.z + chunkZ),
-                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | Renderer::FaceTop
+                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8))
+                | Renderer::AO::NotDark << 3
+                | Renderer::AO::NotDark << 5
+                | Renderer::AO::NotDark << 7
+                | Renderer::AO::NotDark << 9
+                | Renderer::FaceTop
               });
             }
             //right
@@ -187,7 +208,12 @@ void terrainGeneration::surfacesFromChunks(std::vector<Surfacea> &surfaces, cons
                 static_cast<float>(chunk.x + chunkX),
                 static_cast<float>(chunk.y + chunkY),
                 static_cast<float>(chunk.z + chunkZ),
-                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | Renderer::FaceRight
+                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8))
+                | Renderer::AO::NotDark << 3
+                | Renderer::AO::NotDark << 5
+                | Renderer::AO::NotDark << 7
+                | Renderer::AO::NotDark << 9
+                | Renderer::FaceRight
               });
             }
             //front
@@ -196,7 +222,12 @@ void terrainGeneration::surfacesFromChunks(std::vector<Surfacea> &surfaces, cons
                 static_cast<float>(chunk.x + chunkX),
                 static_cast<float>(chunk.y + chunkY),
                 static_cast<float>(chunk.z + chunkZ),
-                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8)) | Renderer::FaceFront
+                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8))
+                | Renderer::AO::NotDark << 3
+                | Renderer::AO::NotDark << 5
+                | Renderer::AO::NotDark << 7
+                | Renderer::AO::NotDark << 9
+                | Renderer::FaceFront
               });
             }
           }
