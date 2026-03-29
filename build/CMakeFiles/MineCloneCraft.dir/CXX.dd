@@ -1,0 +1,15 @@
+ninja_dyndep_version = 1.0
+build CMakeFiles/MineCloneCraft.dir/main.cpp.obj: dyndep
+
+build CMakeFiles/MineCloneCraft.dir/src/calc.cpp.obj: dyndep
+
+build CMakeFiles/MineCloneCraft.dir/src/chunk.cpp.obj: dyndep
+
+build CMakeFiles/MineCloneCraft.dir/src/fileHandler.cpp.obj: dyndep
+
+build CMakeFiles/MineCloneCraft.dir/src/player.cpp.obj: dyndep
+
+build CMakeFiles/MineCloneCraft.dir/src/renderer.cpp.obj: dyndep
+
+build CMakeFiles/MineCloneCraft.dir/src/terrainGeneration.cpp.obj: dyndep
+

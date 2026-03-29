@@ -1,0 +1,3 @@
+C:/Users/Tomasz/Desktop/mineclonecraft/build/CMakeFiles/MineCloneCraft.dir
+C:/Users/Tomasz/Desktop/mineclonecraft/build/CMakeFiles/edit_cache.dir
+C:/Users/Tomasz/Desktop/mineclonecraft/build/CMakeFiles/rebuild_cache.dir
