@@ -1,124 +1,87 @@
 #pragma once
 
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
-#include "player.hpp"
-#include <cstdint>
-#include <string>
+#include <SDL3/SDL_vulkan.h>
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 #include <vector>
+#include <string>
 
-struct Tri {
-  int ind1, ind2, ind3;
-  float dist;
-};
-
-class Surface {
-public:
-  float x, y, z;
-  uint32_t texCorAndNormal;
-
-  inline uint8_t getTextureIndex() const {
-    return this->texCorAndNormal >> 24;
-  }
-
-  inline uint8_t getAO() const {
-    return static_cast<uint8_t>((this->texCorAndNormal & 0b11111111000) >> 3);
-  }
-
-  inline uint8_t getNormal() const {
-    return this->texCorAndNormal & 0b111;
-  }
-
-  inline float centerX() const {
-    switch(this->getNormal()) {
-      case 0b000:
-        return this->x + 0.5f;
-      case 0b001:
-        return this->x;
-      case 0b010:
-        return this->x + 0.5f;
-      case 0b100:
-        return this->x + 0.5f;
-      case 0b101:
-        return this->x + 1.0f;
-      default:
-        return this->x + 0.5f;
-    }
-  }
-
-  inline float centerY() const {
-    switch(this->getNormal()) {
-      case 0b000:
-        return this->x;
-      case 0b001:
-        return this->x + 0.5f;
-      case 0b010:
-        return this->x + 0.5f;
-      case 0b100:
-        return this->x + 1.0f;
-      case 0b101:
-        return this->x + 0.5f;
-      default:
-        return this->x + 0.5f;
-    }
-  }
-
-  inline float centerZ() const {
-    switch(this->getNormal()) {
-      case 0b000:
-        return this->x + 0.5f;
-      case 0b001:
-        return this->x + 0.5f;
-      case 0b010:
-        return this->x;
-      case 0b100:
-        return this->x + 0.5f;
-      case 0b101:
-        return this->x + 0.5f;
-      default:
-        return this->x + 1.0f;
-    }
-  }
+struct SwapChainSupportDetails {
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> presentModes;
 };
 
 class Renderer {
 public:
-  SDL_Renderer* renderer;
-  SDL_Texture* texture;
-  int r, g, b;
+  VkInstance instance;
+  VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+  uint32_t presentationFamilyIndices = 0;
+  uint32_t graphicsFamilyIndices = 0;
+  VkDevice device;
+  VkPhysicalDeviceFeatures deviceFeatures{};
+  VkQueue graphicsQueue;
+  VkSurfaceKHR surface;
+  VkQueue presentQueue;
+  float queuePriority = 1.0f;
+  const std::vector<const char*> deviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+  };
+  VkSwapchainKHR  swapChain;
+  std::vector<VkImage> swapChainImages;
+  VkFormat swapChainImageFormat;
+  VkExtent2D swapChainExtend;
+  std::vector<VkImageView> swapChainImageViews;
+  std::vector<VkDynamicState> dynamicStates = {
+    VK_DYNAMIC_STATE_VIEWPORT,
+    VK_DYNAMIC_STATE_SCISSOR
+  };
+  VkRenderPass renderPass;
+  VkPipelineLayout pipelineLayout;
+  std::vector<VkFramebuffer> swapChainFramebuffers;
+  VkCommandPool commandPool;
+  VkCommandBuffer commandBuffer;
+  VkSemaphore imageAvailableSemaphore;
+  VkSemaphore renderFinishedSemaphore;
+  VkFence inFlightFence;
+  VkPipeline graphicsPipeline;
+  VkShaderModule vertShaderModule;
+  VkShaderModule fragShaderModule;
 
-  Renderer(SDL_Window* window, int r, int g, int b);
+  Renderer(SDL_Window* window);
 
   ~Renderer();
 
-  bool ok();
+  void drawFrame(VkDevice device, VkFence inFlightFence, VkSwapchainKHR swapChain, VkSemaphore imageAvailableSemaphore);
 
-  void makeTrianglesWithIndices(const std::vector<Surface>& surfaces, std::vector<SDL_Vertex>& triangles, std::vector<Tri>& indices, const Player& player);
+  static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
+  static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+  static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+  static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, SDL_Window* window);
+  static void createSwapChain(
+    VkPhysicalDevice physicalDevice,
+    VkDevice device,
+    SDL_Window* window,
+    VkSurfaceKHR surface,
+    uint32_t graphicsFamily,
+    uint32_t presentFamily,
+    VkSwapchainKHR& swapChain,
+    std::vector<VkImage>& swapChainImages,
+    VkFormat& swapChainImageFormat,
+    VkExtent2D& swapChainExtent
+  );
+  static std::vector<char> readFile(const std::string& filename);
+  static VkShaderModule createShaderModule(const std::vector<char>& code, VkDevice device);
+  static void recordCommandBuffer(
+    VkCommandBuffer commandBuffer,
+    uint32_t imageIndex,
+    VkRenderPass renderPass,
+    VkFramebuffer framebuffer,
+    VkExtent2D extent,
+    VkPipeline pipeline
+  );
 
-  Renderer& prepare();
-
-  Renderer& terrain(const std::vector<Surface>& surfaces, const Player& player);
-
-  Renderer& hud(const std::vector<std::string>& strings, const std::vector<std::pair<int, int>>& positions);
-
-  void render();
-
-  enum surfaceDirection : uint32_t {
-    FaceBottom = 0b000,
-    FaceLeft,
-    FaceBack,
-    FaceTop = 0b100,
-    FaceRight,
-    FaceFront,
-    SurfaceNormal = 0b111
-  };
-
-  enum AO : uint32_t {
-    FullDark = 0b00,
-    VeryDark = 0b01,
-    LittleDark = 0b10,
-    NotDark = 0b11,
-    VertexAO = 0b11
-  };
+  void frame();
 };

@@ -138,7 +138,7 @@ void terrainGeneration::Terrain::loadChunk(const Chunk& chunk) {
   }
 }
 
-void terrainGeneration::surfacesFromChunks(std::vector<Surface> &surfaces, const std::vector<Chunk> &chunks) {
+/*void terrainGeneration::surfacesFromChunks(std::vector<Surface> &surfaces, const std::vector<Chunk> &chunks) {
   surfaces.reserve(surfaces.size() + 6 * 16 * 16);
 
   for(const Chunk& chunk : chunks) {
@@ -235,4 +235,4 @@ void terrainGeneration::surfacesFromChunks(std::vector<Surface> &surfaces, const
       }
     }
   }
-}
+}*/
