@@ -1,18 +1,24 @@
 #include "../include/renderer.hpp"
 
+#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_video.h>
 #include <algorithm>
 #include <fstream>
 #include <limits>
 #include <set>
+#include <string>
+#include <vulkan/vulkan_core.h>
+#include "../include/config.hpp"
 
-Renderer::Renderer(SDL_Window* window) {
-  // Create instance
+void Renderer::createInstance() {
+  const std::string str1 = config::fullName();
+  const std::string str2 = config::engineName();
+
   VkApplicationInfo appInfo{};
   appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-  appInfo.pApplicationName = "Hello Triangle";
-  appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-  appInfo.pEngineName = "No Engine";
+  appInfo.pApplicationName = str1.c_str();
+  appInfo.applicationVersion = VK_MAKE_VERSION(config::majoranta, config::minoranta, config::patch);
+  appInfo.pEngineName = str2.c_str();
   appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
   appInfo.apiVersion = VK_API_VERSION_1_0;
 
@@ -27,30 +33,28 @@ Renderer::Renderer(SDL_Window* window) {
   createInfo.ppEnabledExtensionNames = extensions;
   createInfo.enabledLayerCount = 0;
 
-  if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-    SDL_Log("Could not create instance\n");
+  if(vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create instance\n");
   }
-  //
+}
 
-  // TODO: Add validation layers
-
-  // Create surface
-  if(!SDL_Vulkan_CreateSurface(window, instance, nullptr, &surface)) {
-    SDL_Log("Could not create surface\n");
+// FIXME: I get an error even though everyting seems to work
+void Renderer::createSurface(SDL_Window* window) {
+  if(SDL_Vulkan_CreateSurface(window, instance, nullptr, &surface) != VK_SUCCESS) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create surface\n");
   }
-  //
+}
 
-  // Pick Physical device
+std::vector<VkDeviceQueueCreateInfo> Renderer::pickPhysicalDevice() {
   uint32_t deviceCount = 0;
   vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
   std::vector<VkPhysicalDevice> devices(deviceCount);
   vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
-  // FIXME: Change this "magic function"
+  // TODO: Change this "magic function"
   for(const VkPhysicalDevice& device : devices) {
     VkPhysicalDeviceProperties deviceProperties;
-    VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
@@ -106,10 +110,9 @@ Renderer::Renderer(SDL_Window* window) {
       }
     }
   }
-
  
   if(physicalDevice == VK_NULL_HANDLE) {
-    SDL_Log("Could not find suitable physical device\n");
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not find suitable physical device\n");
   }
 
   std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -123,42 +126,82 @@ Renderer::Renderer(SDL_Window* window) {
     queueCreateInfo.pQueuePriorities = &queuePriority;
     queueCreateInfos.push_back(queueCreateInfo);
   }
-  //
 
-  // Create logical device
+  return queueCreateInfos;
+}
+
+void Renderer::createLogicalDevice(std::vector<VkDeviceQueueCreateInfo> queueCreateInfo) {
   VkDeviceCreateInfo createInfo2{};
   createInfo2.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-  createInfo2.pQueueCreateInfos = queueCreateInfos.data();
-  createInfo2.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+  createInfo2.pQueueCreateInfos = queueCreateInfo.data();
+  createInfo2.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfo.size());
   createInfo2.pEnabledFeatures = &deviceFeatures;
   createInfo2.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
   createInfo2.ppEnabledExtensionNames = deviceExtensions.data();
   createInfo2.enabledLayerCount = 0;
 
   if(vkCreateDevice(physicalDevice, &createInfo2, nullptr, &device) != VK_SUCCESS) {
-    SDL_Log("Could not create logical device\n");
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create logical device\n");
   }
 
   vkGetDeviceQueue(device, graphicsFamilyIndices, 0, &graphicsQueue);
   vkGetDeviceQueue(device, presentationFamilyIndices, 0, &presentQueue);
-  //
+}
 
-  // SwapChain
-  createSwapChain(
-    physicalDevice,
-    device,
-    window,
-    surface,
-    graphicsFamilyIndices,
-    presentationFamilyIndices,
-    swapChain,
-    swapChainImages,
-    swapChainImageFormat,
-    swapChainExtend
-  );
-  //
+void Renderer::createSwapChain(SDL_Window* window) {
+  SwapChainSupportDetails swapChainSupport = Renderer::querySwapChainSupport(physicalDevice, surface);
 
-  // Image views
+  VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+  VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+  VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, window);
+
+  uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+
+  if (swapChainSupport.capabilities.maxImageCount > 0 &&
+    imageCount > swapChainSupport.capabilities.maxImageCount) {
+    imageCount = swapChainSupport.capabilities.maxImageCount;
+  }
+
+  VkSwapchainCreateInfoKHR createInfo{};
+  createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+  createInfo.surface = surface;
+
+  createInfo.minImageCount = imageCount;
+  createInfo.imageFormat = surfaceFormat.format;
+  createInfo.imageColorSpace = surfaceFormat.colorSpace;
+  createInfo.imageExtent = extent;
+  createInfo.imageArrayLayers = 1;
+  createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+  uint32_t queueFamilyIndices[] = {graphicsFamilyIndices, presentationFamilyIndices};
+
+  if (graphicsFamilyIndices != presentationFamilyIndices) {
+    createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+    createInfo.queueFamilyIndexCount = 2;
+    createInfo.pQueueFamilyIndices = queueFamilyIndices;
+  } else {
+    createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  }
+
+  createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+  createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+  createInfo.presentMode = presentMode;
+  createInfo.clipped = VK_TRUE;
+  createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+  if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create swapchain\n");
+  }
+
+  vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+  swapChainImages.resize(imageCount);
+  vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+
+  swapChainImageFormat = surfaceFormat.format;
+  swapChainExtent = extent;
+}
+
+void Renderer::createImageViews() {
   swapChainImageViews.resize(swapChainImages.size());
 
   for(size_t i = 0; i < swapChainImages.size(); ++i) {
@@ -176,13 +219,14 @@ Renderer::Renderer(SDL_Window* window) {
     createInfo.subresourceRange.levelCount = 1;
     createInfo.subresourceRange.baseArrayLayer = 0;
     createInfo.subresourceRange.layerCount = 1;
+
     if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
-      SDL_Log("Could not create image view\n");
+      SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create image views\n");
     }
   }
-  //
+}
 
-  // Render pass
+void Renderer::createRenderPass() {
   VkAttachmentDescription colorAttachment{};
   colorAttachment.format = swapChainImageFormat;
   colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -220,16 +264,16 @@ Renderer::Renderer(SDL_Window* window) {
   renderPassInfo.pDependencies = &dependency;
 
   if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-    SDL_Log("Could not create render pass\n");
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create render pass\n");
   }
-  //
- 
-  // Graphics pipeline
-  auto vertShaderCode = Renderer::readFile("../shaders/vert.spv");
-  auto fragShaderCode = Renderer::readFile("../shaders/frag.spv");
+}
 
-  vertShaderModule = Renderer::createShaderModule(vertShaderCode, device);
-  fragShaderModule = Renderer::createShaderModule(fragShaderCode, device);
+void Renderer::createGraphicalPipeline() {
+  std::vector<char> vertShaderCode = Renderer::readFile("../shaders/vert.spv");
+  std::vector<char> fragShaderCode = Renderer::readFile("../shaders/frag.spv");
+
+  VkShaderModule vertShaderModule = Renderer::createShaderModule(vertShaderCode, device);
+  VkShaderModule fragShaderModule = Renderer::createShaderModule(fragShaderCode, device);
 
   VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
   vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -244,9 +288,7 @@ Renderer::Renderer(SDL_Window* window) {
   fragShaderStageInfo.pName = "main";
 
   VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
-  //
 
-  // Fixed function
   VkPipelineDynamicStateCreateInfo dynamicState{};
   dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
   dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
@@ -265,19 +307,18 @@ Renderer::Renderer(SDL_Window* window) {
   VkViewport viewport{};
   viewport.x = 0.0f;
   viewport.y = 0.0f;
-  viewport.width = (float) swapChainExtend.width;
-  viewport.height = (float) swapChainExtend.height;
+  viewport.width = (float) swapChainExtent.width;
+  viewport.height = (float) swapChainExtent.height;
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
 
   VkRect2D scissor{};
   scissor.offset = {0, 0};
-  scissor.extent = swapChainExtend;
+  scissor.extent = swapChainExtent;
 
   VkPipelineViewportStateCreateInfo viewportState{};
   viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
   viewportState.viewportCount = 1;
-  viewportState.scissorCount = 1;
   viewportState.pViewports = nullptr;
   viewportState.scissorCount = 1;
   viewportState.pScissors = nullptr;
@@ -317,7 +358,7 @@ Renderer::Renderer(SDL_Window* window) {
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
   if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-    SDL_Log("Could not create pipeline\n");
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create pipeline layout\n");
   }
 
   VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -337,12 +378,16 @@ Renderer::Renderer(SDL_Window* window) {
   pipelineInfo.subpass = 0;
 
   if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
-    SDL_Log("Could not create graphics pipeline\n");
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create pipeline\n");
   }
-  //
 
-  // Framebuffer
+  vkDestroyShaderModule(device, vertShaderModule, nullptr);
+  vkDestroyShaderModule(device, fragShaderModule, nullptr);
+}
+
+void Renderer::createFramebuffers() {
   swapChainFramebuffers.resize(swapChainImageViews.size());
+
   for (size_t i = 0; i < swapChainImageViews.size(); i++) {
     VkImageView attachments[] = {
       swapChainImageViews[i]
@@ -353,24 +398,24 @@ Renderer::Renderer(SDL_Window* window) {
     framebufferInfo.renderPass = renderPass;
     framebufferInfo.attachmentCount = 1;
     framebufferInfo.pAttachments = attachments;
-    framebufferInfo.width = swapChainExtend.width;
-    framebufferInfo.height = swapChainExtend.height;
+    framebufferInfo.width = swapChainExtent.width;
+    framebufferInfo.height = swapChainExtent.height;
     framebufferInfo.layers = 1;
 
     if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS) {
-      SDL_Log("Could not create framebuffer\n");
+      SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create framebuffer\n");
     }
   }
-  //
+}
 
-  // Command pool
+void Renderer::createCommandPool() {
   VkCommandPoolCreateInfo poolInfo{};
   poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
   poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
   poolInfo.queueFamilyIndex = graphicsFamilyIndices;
 
   if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-    SDL_Log("Could not create command pool\n");
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create command pool\n");
   }
 
   VkCommandBufferAllocateInfo allocInfo{};
@@ -380,9 +425,22 @@ Renderer::Renderer(SDL_Window* window) {
   allocInfo.commandBufferCount = 1;
 
   if (vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer) != VK_SUCCESS) {
-    SDL_Log("Could not allocate command buffer\n");
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not allocate command buffers\n");
   }
-  //
+}
+
+Renderer::Renderer(SDL_Window* window) {
+  this->createInstance();
+  // TODO: Add validation layers
+  this->createSurface(window);
+  std::vector<VkDeviceQueueCreateInfo> queueCreateInfo = this->pickPhysicalDevice();
+  this->createLogicalDevice(queueCreateInfo);
+  this->createSwapChain(window);
+  this->createImageViews();
+  this->createRenderPass();
+  this->createGraphicalPipeline();
+  this->createFramebuffers();
+  this->createCommandPool();
 
   // Create Sync Objects
   VkSemaphoreCreateInfo semaphoreInfo{};
@@ -395,7 +453,7 @@ Renderer::Renderer(SDL_Window* window) {
   if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
     vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
     vkCreateFence(device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
-    SDL_Log("Failed to create semaphores\n");
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create semaphore\n");
   }
 
   VkFenceCreateInfo fenceInfo2{};
@@ -420,28 +478,26 @@ Renderer::~Renderer() {
   vkDestroyPipeline(device, graphicsPipeline, nullptr);
   vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
   vkDestroyRenderPass(device, renderPass, nullptr);
-  vkDestroyShaderModule(device, fragShaderModule, nullptr);
-  vkDestroyShaderModule(device, vertShaderModule, nullptr);
   vkDestroySwapchainKHR(device, swapChain, nullptr);
   vkDestroySurfaceKHR(instance, surface, nullptr);
   vkDestroyDevice(device, nullptr);
   vkDestroyInstance(instance, nullptr);
-
 }
 
 void Renderer::frame() {
   vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
 
   uint32_t imageIndex;
-  vkAcquireNextImageKHR(device, swapChain, UINT64_MAX,
-  imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+  if(vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not acquire next image\n");
+  }
 
   recordCommandBuffer(
   commandBuffer,
   imageIndex,
   renderPass,
   swapChainFramebuffers[imageIndex],
-  swapChainExtend,
+  swapChainExtent,
   graphicsPipeline
   );
 
@@ -476,8 +532,9 @@ void Renderer::frame() {
   presentInfo.pSwapchains = swapChains;
   presentInfo.pImageIndices = &imageIndex;
 
-  vkQueuePresentKHR(presentQueue, &presentInfo);
-  vkQueueWaitIdle(presentQueue);
+  if(vkQueuePresentKHR(presentQueue, &presentInfo) != VK_SUCCESS) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "vkQueuePresentKHR failed\n");
+  }
 }
 
 SwapChainSupportDetails Renderer::querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
@@ -542,71 +599,6 @@ VkExtent2D Renderer::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabiliti
     return actualExtent;
   }
 }
-
-void Renderer::createSwapChain(
-  VkPhysicalDevice physicalDevice,
-  VkDevice device,
-  SDL_Window* window,
-  VkSurfaceKHR surface,
-  uint32_t graphicsFamily,
-  uint32_t presentFamily,
-  VkSwapchainKHR& swapChain,
-  std::vector<VkImage>& swapChainImages,
-  VkFormat& swapChainImageFormat,
-  VkExtent2D& swapChainExtent
-) {
-  SwapChainSupportDetails swapChainSupport = Renderer::querySwapChainSupport(physicalDevice, surface);
-
-  VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-  VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-  VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, window);
-
-  uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-
-  if (swapChainSupport.capabilities.maxImageCount > 0 &&
-    imageCount > swapChainSupport.capabilities.maxImageCount) {
-    imageCount = swapChainSupport.capabilities.maxImageCount;
-  }
-
-  VkSwapchainCreateInfoKHR createInfo{};
-  createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-  createInfo.surface = surface;
-
-  createInfo.minImageCount = imageCount;
-  createInfo.imageFormat = surfaceFormat.format;
-  createInfo.imageColorSpace = surfaceFormat.colorSpace;
-  createInfo.imageExtent = extent;
-  createInfo.imageArrayLayers = 1;
-  createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-  uint32_t queueFamilyIndices[] = {graphicsFamily, presentFamily};
-
-  if (graphicsFamily != presentFamily) {
-    createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-    createInfo.queueFamilyIndexCount = 2;
-    createInfo.pQueueFamilyIndices = queueFamilyIndices;
-  } else {
-    createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  }
-
-  createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-  createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-  createInfo.presentMode = presentMode;
-  createInfo.clipped = VK_TRUE;
-  createInfo.oldSwapchain = VK_NULL_HANDLE;
-
-  if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
-    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create swapchain\n");
-  }
-
-  vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
-  swapChainImages.resize(imageCount);
-  vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
-
-  swapChainImageFormat = surfaceFormat.format;
-  swapChainExtent = extent;
-}
-
 
 std::vector<char> Renderer::readFile(const std::string& filename) {
   std::ifstream file(filename, std::ios::ate | std::ios::binary);

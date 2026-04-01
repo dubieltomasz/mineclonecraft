@@ -15,7 +15,7 @@ struct SwapChainSupportDetails {
 };
 
 class Renderer {
-public:
+private:
   VkInstance instance;
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   uint32_t presentationFamilyIndices = 0;
@@ -32,7 +32,7 @@ public:
   VkSwapchainKHR  swapChain;
   std::vector<VkImage> swapChainImages;
   VkFormat swapChainImageFormat;
-  VkExtent2D swapChainExtend;
+  VkExtent2D swapChainExtent;
   std::vector<VkImageView> swapChainImageViews;
   std::vector<VkDynamicState> dynamicStates = {
     VK_DYNAMIC_STATE_VIEWPORT,
@@ -47,41 +47,30 @@ public:
   VkSemaphore renderFinishedSemaphore;
   VkFence inFlightFence;
   VkPipeline graphicsPipeline;
-  VkShaderModule vertShaderModule;
-  VkShaderModule fragShaderModule;
 
-  Renderer(SDL_Window* window);
+  void createInstance();
+  void createSurface(SDL_Window* window);
+  std::vector<VkDeviceQueueCreateInfo> pickPhysicalDevice();
+  void createLogicalDevice(std::vector<VkDeviceQueueCreateInfo> queueCreateInfo);
+  void createSwapChain(SDL_Window* window);
+  void createImageViews();
+  void createRenderPass();
+  void createGraphicalPipeline();
+  void createFramebuffers();
+  void createCommandPool();
 
-  ~Renderer();
-
+  SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
+  VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+  VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+  VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, SDL_Window* window);
+  std::vector<char> readFile(const std::string& filename);
+  VkShaderModule createShaderModule(const std::vector<char>& code, VkDevice device);
+  void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline pipeline);
   void drawFrame(VkDevice device, VkFence inFlightFence, VkSwapchainKHR swapChain, VkSemaphore imageAvailableSemaphore);
 
-  static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
-  static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-  static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-  static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, SDL_Window* window);
-  static void createSwapChain(
-    VkPhysicalDevice physicalDevice,
-    VkDevice device,
-    SDL_Window* window,
-    VkSurfaceKHR surface,
-    uint32_t graphicsFamily,
-    uint32_t presentFamily,
-    VkSwapchainKHR& swapChain,
-    std::vector<VkImage>& swapChainImages,
-    VkFormat& swapChainImageFormat,
-    VkExtent2D& swapChainExtent
-  );
-  static std::vector<char> readFile(const std::string& filename);
-  static VkShaderModule createShaderModule(const std::vector<char>& code, VkDevice device);
-  static void recordCommandBuffer(
-    VkCommandBuffer commandBuffer,
-    uint32_t imageIndex,
-    VkRenderPass renderPass,
-    VkFramebuffer framebuffer,
-    VkExtent2D extent,
-    VkPipeline pipeline
-  );
+public:
+  Renderer(SDL_Window* window);
+  ~Renderer();
 
   void frame();
 };
