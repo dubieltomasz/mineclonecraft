@@ -2,7 +2,7 @@
 
 #include "calc.hpp"
 #include "chunk.hpp"
-#include "renderer.hpp"
+//#include "renderer.hpp"
 #include <array>
 #include <math.h>
 #include <vector>

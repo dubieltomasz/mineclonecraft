@@ -89,14 +89,19 @@ int main(int argc, char *argv[]) {
         shouldClose = true;
       }
 
+      if(event.type == SDL_EVENT_WINDOW_RESIZED) {
+        renderer.windowResized();
+      }
+
       player.handleEvent(event);
     }
     player.handleInput(dt);
     player.updateCamera();
 
-    renderer.frame();
+    renderer.drawFrame();
   }
 
+  renderer.~Renderer();
   SDL_DestroyWindow(window);
   SDL_Quit();
   return 0;
