@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <string>
+#include <vulkan/vulkan_core.h>
 
 struct SwapChainSupportDetails {
   VkSurfaceCapabilitiesKHR capabilities;
@@ -48,6 +49,8 @@ private:
   std::vector<VkFence> inFlightFences = {};
   VkPipeline graphicsPipeline;
   bool framebufferResized = false;
+  VkBuffer vertexBuffer;
+  VkDeviceMemory vertexBufferMemory;
 
   void createInstance();
   void createSurface();
@@ -58,6 +61,8 @@ private:
   void createRenderPass();
   void createGraphicalPipeline();
   void createFramebuffers();
+  void createCommandPool();
+  void createVertexBuffer();
   void createCommandBuffers();
 
   SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
@@ -69,6 +74,7 @@ private:
   void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline pipeline);
   void recreateSwapChain();
   void cleanupSwapChain();
+  uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 public:
   Renderer(SDL_Window* window);

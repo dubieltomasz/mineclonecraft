@@ -17,6 +17,11 @@ Vec2::Vec2(float theta) {
   this->y = std::sin(theta);
 }
 
+Vec2::Vec2(float x, float y) {
+  this->x = x;
+  this->y = y;
+}
+
 float Vec2::operator*(const Vec2 &v) const {
   return this->x * v.x + this->y * v.y;
 }

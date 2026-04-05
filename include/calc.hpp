@@ -16,6 +16,8 @@ public:
 
   Vec2(float theta);
 
+  Vec2(float x, float y);
+
   float operator*(const Vec2 &v) const;
 };
 
