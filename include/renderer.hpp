@@ -51,6 +51,8 @@ private:
   bool framebufferResized = false;
   VkBuffer vertexBuffer;
   VkDeviceMemory vertexBufferMemory;
+  VkBuffer indexBuffer;
+  VkDeviceMemory indexBufferMemory;
 
   void createInstance();
   void createSurface();
@@ -63,6 +65,7 @@ private:
   void createFramebuffers();
   void createCommandPool();
   void createVertexBuffer();
+  void createIndexBuffer();
   void createCommandBuffers();
 
   SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
@@ -75,6 +78,8 @@ private:
   void recreateSwapChain();
   void cleanupSwapChain();
   uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+  void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+  void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 public:
   Renderer(SDL_Window* window);
