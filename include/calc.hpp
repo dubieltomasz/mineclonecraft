@@ -43,6 +43,8 @@ public:
   template <typename T> Vec4 operator/(const T &value) const;
 
   static float dotProduct(const Vec4 &v1, const Vec4 &v2);
+  static Vec4 normalize(const Vec4& v);
+  static Vec4 crossProduct(const Vec4 &v1, const Vec4 &v2);
 
   bool operator==(const Vec4 &v) const;
 
@@ -90,5 +92,9 @@ public:
   static Mat4 MRotationY(float theta);
 
   static Mat4 MRotationZ(float theta);
+
+  static Mat4 lookAt(const Vec4& v1, const Vec4& v2, const Vec4& v3);
+
+  static Mat4 perspective(float fov, float f1, float f2, float f3);
 };
 } // namespace calc

@@ -6,6 +6,7 @@
 #include <SDL3/SDL_version.h>
 #include <SDL3/SDL_video.h>
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <fstream>
 #include <limits>
@@ -13,6 +14,7 @@
 #include <string>
 #include <vector>
 #include <vulkan/vulkan_core.h>
+#include <chrono>
 #include "../include/config.hpp"
 #include "../include/calc.hpp"
 
@@ -20,7 +22,7 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 bool currentFrame = 0;
 
 struct Vertex {
-  calc::Vec2 pos;
+  calc::Vec4 pos;
   calc::Vec4 col;
 
   static VkVertexInputBindingDescription getBindingDescription() {
@@ -36,7 +38,7 @@ struct Vertex {
     std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
-    attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
     attributeDescriptions[0].offset = offsetof(Vertex, pos);
     attributeDescriptions[1].binding = 0;
     attributeDescriptions[1].location = 1;
@@ -48,14 +50,20 @@ struct Vertex {
 };
 
 const std::vector<Vertex> vertices = {
-  {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-  {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-  {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-  {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f, 1.0f}}
+  {{0.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
+  {{1.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
+  {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
+  {{1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}}
 };
 
 const std::vector<uint16_t> indices = {
-  0, 1, 2, 2, 3, 0
+  0, 1, 2, 1, 2, 3
+};
+
+struct UniformBufferObject {
+  calc::Mat4 model;
+  calc::Mat4 view;
+  calc::Mat4 proj;
 };
 
 void Renderer::createInstance() {
@@ -320,6 +328,28 @@ void Renderer::createRenderPass() {
   }
 }
 
+void Renderer::createDescriptorSetLayout() {
+  VkDescriptorSetLayoutBinding uboLayoutBinding{};
+  uboLayoutBinding.binding = 0;
+  uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  uboLayoutBinding.descriptorCount = 1;
+  uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+  VkDescriptorSetLayoutCreateInfo layoutInfo{};
+  layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+  layoutInfo.bindingCount = 1;
+  layoutInfo.pBindings = &uboLayoutBinding;
+
+  if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create descriptor set layout\n");
+  }
+
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+  pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  pipelineLayoutInfo.setLayoutCount = 1;
+  pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+}
+
 void Renderer::createGraphicalPipeline() {
   std::vector<char> vertShaderCode = Renderer::readFile("../shaders/vert.spv");
   std::vector<char> fragShaderCode = Renderer::readFile("../shaders/frag.spv");
@@ -386,8 +416,8 @@ void Renderer::createGraphicalPipeline() {
   rasterizer.rasterizerDiscardEnable = VK_FALSE;
   rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
   rasterizer.lineWidth = 1.0f;
-  rasterizer.cullMode = VK_CULL_MODE_NONE;
-  rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+  rasterizer.cullMode = VK_CULL_MODE_NONE; // TODO: stop rendering back of triangles
+  rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
   rasterizer.depthBiasEnable = VK_FALSE;
 
   VkPipelineMultisampleStateCreateInfo multisampling{};
@@ -413,6 +443,8 @@ void Renderer::createGraphicalPipeline() {
 
   VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  pipelineLayoutInfo.setLayoutCount = 1;
+  pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 
   if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create pipeline layout\n");
@@ -529,6 +561,70 @@ void Renderer::createIndexBuffer() {
   vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
+void Renderer::createUniformBuffers() {
+  VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+  uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+  uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+  uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+    vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
+  }
+}
+
+void Renderer::createDescriptorPool() {
+  VkDescriptorPoolSize poolSize{};
+  poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+  VkDescriptorPoolCreateInfo poolInfo{};
+  poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  poolInfo.poolSizeCount = 1;
+  poolInfo.pPoolSizes = &poolSize;
+
+  poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+  if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not allocate descriptor pool\n");
+  }
+}
+
+void Renderer::createDescriptorSets() {
+  std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+
+  VkDescriptorSetAllocateInfo allocInfo{};
+  allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+  allocInfo.descriptorPool = descriptorPool;
+  allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+  allocInfo.pSetLayouts = layouts.data();
+
+  descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+
+  if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not allocate descriptor sets\n");
+  }
+
+  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    VkDescriptorBufferInfo bufferInfo{};
+    bufferInfo.buffer = uniformBuffers[i];
+    bufferInfo.offset = 0;
+    bufferInfo.range = sizeof(UniformBufferObject);
+
+    VkWriteDescriptorSet descriptorWrite{};
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = descriptorSets[i];
+    descriptorWrite.dstBinding = 0;
+    descriptorWrite.dstArrayElement = 0;
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pBufferInfo = &bufferInfo;
+
+    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+  }
+}
+
 void Renderer::createCommandBuffers() {
   commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -554,11 +650,15 @@ Renderer::Renderer(SDL_Window* window) {
   this->createSwapChain();
   this->createImageViews();
   this->createRenderPass();
+  this->createDescriptorSetLayout();
   this->createGraphicalPipeline();
   this->createFramebuffers();
   this->createCommandPool();
   this->createVertexBuffer();
   this->createIndexBuffer();
+  this->createUniformBuffers();
+  this->createDescriptorPool();
+  this->createDescriptorSets();
   this->createCommandBuffers();
 
   // Create Sync Objects
@@ -590,6 +690,14 @@ Renderer::Renderer(SDL_Window* window) {
 Renderer::~Renderer() {
   cleanupSwapChain();
 
+  for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+    vkDestroyBuffer(device, uniformBuffers[i], nullptr);
+    vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
+  }
+
+  vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+  vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+
   vkDestroyBuffer(device, indexBuffer, nullptr);
   vkFreeMemory(device, indexBufferMemory, nullptr);
   
@@ -613,7 +721,7 @@ Renderer::~Renderer() {
   vkDestroyInstance(instance, nullptr);
 }
 
-void Renderer::drawFrame() {
+void Renderer::drawFrame(Player* player) {
   vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
   uint32_t imageIndex;
@@ -634,6 +742,8 @@ void Renderer::drawFrame() {
   swapChainExtent,
   graphicsPipeline
   );
+
+  updateUniformBuffer(currentFrame, player);
 
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -843,6 +953,8 @@ void Renderer::recordCommandBuffer(
   vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
   vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16); // TODO: change to 32 if too small
 
+  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+
   vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
   vkCmdEndRenderPass(commandBuffer);
@@ -906,6 +1018,47 @@ void Renderer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize s
   vkQueueWaitIdle(graphicsQueue);
 
   vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+}
 
+void Renderer::updateUniformBuffer(bool currentFrame, Player* player) {
+  static auto startTime = std::chrono::high_resolution_clock::now();
 
+  auto currentTime = std::chrono::high_resolution_clock::now();
+  float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+  calc::Mat4 rotation = calc::Mat4::MRotationY(player->rotX * M_PI / 180.0f) *  calc::Mat4::MRotationX(player->rotY * M_PI / 180.0f);
+
+  calc::Mat4 translation = calc::Mat4::MIdentity();
+  translation(0, 3) = -player->x;
+  translation(1, 3) = -player->y;
+  translation(2, 3) = -player->z;
+
+  UniformBufferObject ubo{};
+  ubo.view = rotation.transpose() * translation;
+  ubo.view = ubo.view.transpose();
+  ubo.model = calc::Mat4::MIdentity().transpose();
+
+  ///
+  float fov = 70.0f * M_PI / 180.0f;
+  float aspect = 800.0f / 600.0f;
+  float nearP = 0.1f;
+  float farP = 100.0f;
+
+  float f = 1.0f / tan(fov / 2.0f);
+
+  calc::Mat4 proj = calc::Mat4::MIdentity();
+
+  proj(0,0) = f / aspect;
+  proj(1,1) = f;
+  proj(2,2) = farP / (nearP - farP);
+  proj(2,3) = (farP * nearP) / (nearP - farP);
+  proj(3,2) = -1.0f;
+  proj(3,3) = 0.0f;
+
+  proj(1,1) *= -1.0f;
+
+  ubo.proj = proj.transpose();
+  //ubo.proj = calc::Mat4::MIdentity();
+  
+  memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
 }

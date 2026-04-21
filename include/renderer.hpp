@@ -3,10 +3,12 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_video.h>
 #include <SDL3/SDL_vulkan.h>
+#include <cstdint>
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <string>
 #include <vulkan/vulkan_core.h>
+#include "player.hpp"
 
 struct SwapChainSupportDetails {
   VkSurfaceCapabilitiesKHR capabilities;
@@ -40,6 +42,7 @@ private:
     VK_DYNAMIC_STATE_SCISSOR
   };
   VkRenderPass renderPass;
+  VkDescriptorSetLayout descriptorSetLayout;
   VkPipelineLayout pipelineLayout;
   std::vector<VkFramebuffer> swapChainFramebuffers;
   VkCommandPool commandPool;
@@ -53,6 +56,11 @@ private:
   VkDeviceMemory vertexBufferMemory;
   VkBuffer indexBuffer;
   VkDeviceMemory indexBufferMemory;
+  std::vector<VkBuffer> uniformBuffers;
+  std::vector<VkDeviceMemory> uniformBuffersMemory;
+  std::vector<void*> uniformBuffersMapped;
+  VkDescriptorPool descriptorPool;
+std::vector<VkDescriptorSet> descriptorSets;
 
   void createInstance();
   void createSurface();
@@ -61,11 +69,15 @@ private:
   void createSwapChain();
   void createImageViews();
   void createRenderPass();
+  void createDescriptorSetLayout();
   void createGraphicalPipeline();
   void createFramebuffers();
   void createCommandPool();
   void createVertexBuffer();
   void createIndexBuffer();
+  void createUniformBuffers();
+  void createDescriptorPool();
+  void createDescriptorSets();
   void createCommandBuffers();
 
   SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
@@ -80,11 +92,12 @@ private:
   uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
   void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
   void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+  void updateUniformBuffer(bool currentFrame, Player* player);
 
 public:
   Renderer(SDL_Window* window);
   ~Renderer();
 
-  void drawFrame();
+  void drawFrame(Player* player);
   void windowResized();
 };

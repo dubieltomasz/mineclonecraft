@@ -75,8 +75,27 @@ template <typename T> Vec4 Vec4::operator/(const T &value) const {
   return {this->x / value, this->y / value, this->z / value, this->w / value};
 }
 
-static float dotProduct(const Vec4 &v1, const Vec4 &v2) {
+float Vec4::dotProduct(const Vec4 &v1, const Vec4 &v2) {
   return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v1.w * v2.w;
+}
+
+Vec4 Vec4::normalize(const Vec4 &v) {
+  float mag = std::sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+
+  if(mag < 1e-6f) {
+    return {0, 0, 0, 0};
+  } else {
+    return {v.x / mag, v.y / mag, v.z / mag, 0.0f};
+  }
+}
+
+Vec4 Vec4::crossProduct(const Vec4 &v1, const Vec4 &v2) {
+  return {
+    v1.y * v2.z - v1.z * v2.y,
+    v1.z * v2.x - v1.x * v2.z,
+    v1.x * v2.y - v1.y * v2.x,
+    0.0f
+  };
 }
 
 bool Vec4::operator==(const Vec4 &v) const {
@@ -252,5 +271,48 @@ Mat4 Mat4::MRotationZ(float theta) {
   matrix[5] = std::cos(theta);
 
   return matrix;
+}
+
+Mat4 Mat4::lookAt(const Vec4 &v1, const Vec4 &v2, const Vec4 &v3) {
+  Vec4 f = Vec4::normalize({v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, 0.0f});
+  Vec4 up = Vec4::normalize(v3);
+  Vec4 s = Vec4::normalize(Vec4::crossProduct(f, up));
+  Vec4 u = Vec4::crossProduct(s, f);
+
+  Mat4 result(1.0f);
+
+  result(0,0) = s.x;
+  result(1,0) = s.y;
+  result(2,0) = s.z;
+
+  result(0,1) = u.x;
+  result(1,1) = u.y;
+  result(2,1) = u.z;
+
+  result(0,2) = -f.x;
+  result(1,2) = -f.y;
+  result(2,2) = -f.z;
+
+  result(3,0) = -Vec4::dotProduct(s, v1);
+  result(3,1) = -Vec4::dotProduct(u, v1);
+  result(3,2) = Vec4::dotProduct(f, v1);
+
+  result(3, 3) = 1.0f;
+
+  return result;
+}
+
+Mat4 Mat4::perspective(float fov, float f1, float f2, float f3) {
+  float tanHalfFov = std::tan(fov / 2.0f);
+
+  Mat4 result(0.0f);
+
+  result(0,0) = 1.0f / (f1 * tanHalfFov);
+  result(1,1) = 1.0f / tanHalfFov;
+  result(2,2) = f3 / (f2 - f3);
+  result(2,3) = 1.0f;
+  result(3,2) = -(f3 * f2) / (f3 - f2);
+
+  return result;
 }
 } // namespace calc
