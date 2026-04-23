@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 #include <vulkan/vulkan_core.h>
-#include <chrono>
 #include "../include/config.hpp"
 #include "../include/calc.hpp"
 
@@ -62,7 +61,8 @@ const std::vector<uint16_t> indices = {
 
 struct UniformBufferObject {
   calc::Mat4 model;
-  calc::Mat4 view;
+  calc::Mat4 trans;
+  calc::Mat4 rot;
   calc::Mat4 proj;
 };
 
@@ -94,7 +94,6 @@ void Renderer::createInstance() {
   }
 }
 
-// FIXME: I get an error even though everyting seems to work
 void Renderer::createSurface() {
   if(SDL_Vulkan_CreateSurface(window, instance, nullptr, &(this->surface)) == false) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create surface: %s\n", SDL_GetError());
@@ -394,8 +393,8 @@ void Renderer::createGraphicalPipeline() {
   VkViewport viewport{};
   viewport.x = 0.0f;
   viewport.y = 0.0f;
-  viewport.width = (float) swapChainExtent.width;
-  viewport.height = (float) swapChainExtent.height;
+  viewport.width = static_cast<float>(swapChainExtent.width);
+  viewport.height = static_cast<float>(swapChainExtent.height);
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
 
@@ -639,29 +638,7 @@ void Renderer::createCommandBuffers() {
   }
 }
 
-Renderer::Renderer(SDL_Window* window) {
-  this->window = window;
-
-  this->createInstance();
-  // TODO: Add validation layers
-  this->createSurface();
-  std::vector<VkDeviceQueueCreateInfo> queueCreateInfo = this->pickPhysicalDevice();
-  this->createLogicalDevice(queueCreateInfo);
-  this->createSwapChain();
-  this->createImageViews();
-  this->createRenderPass();
-  this->createDescriptorSetLayout();
-  this->createGraphicalPipeline();
-  this->createFramebuffers();
-  this->createCommandPool();
-  this->createVertexBuffer();
-  this->createIndexBuffer();
-  this->createUniformBuffers();
-  this->createDescriptorPool();
-  this->createDescriptorSets();
-  this->createCommandBuffers();
-
-  // Create Sync Objects
+void Renderer::createSyncObjects() {
   imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
   renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
   inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -684,7 +661,29 @@ Renderer::Renderer(SDL_Window* window) {
   VkFenceCreateInfo fenceInfo2{};
   fenceInfo2.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
   fenceInfo2.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-  //
+}
+
+Renderer::Renderer(SDL_Window* window) {
+  this->window = window;
+
+  this->createInstance();
+  // TODO: Add validation layers
+  this->createSurface();
+  this->createLogicalDevice(this->pickPhysicalDevice());
+  this->createSwapChain();
+  this->createImageViews();
+  this->createRenderPass();
+  this->createDescriptorSetLayout();
+  this->createGraphicalPipeline();
+  this->createFramebuffers();
+  this->createCommandPool();
+  this->createVertexBuffer();
+  this->createIndexBuffer();
+  this->createUniformBuffers();
+  this->createDescriptorPool();
+  this->createDescriptorSets();
+  this->createCommandBuffers();
+  this->createSyncObjects();
 }
 
 Renderer::~Renderer() {
@@ -727,7 +726,7 @@ void Renderer::drawFrame(Player* player) {
   uint32_t imageIndex;
   VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
   if(result == VK_ERROR_OUT_OF_DATE_KHR) {
-    recreateSwapChain();
+    recreateSwapChain(player);
   } else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not acquire next image\n");
   }
@@ -779,7 +778,7 @@ void Renderer::drawFrame(Player* player) {
   result = vkQueuePresentKHR(presentQueue, &presentInfo);
   if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
     framebufferResized = false;
-    recreateSwapChain();
+    recreateSwapChain(player);
   } else if(result != VK_SUCCESS) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "vkQueuePresentKHR failed\n");
   }
@@ -803,7 +802,7 @@ void Renderer::cleanupSwapChain() {
   vkDestroySwapchainKHR(device, swapChain, nullptr);
 }
 
-void Renderer::recreateSwapChain() {
+void Renderer::recreateSwapChain(Player* player) {
   vkDeviceWaitIdle(device);
 
   cleanupSwapChain();
@@ -1021,12 +1020,7 @@ void Renderer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize s
 }
 
 void Renderer::updateUniformBuffer(bool currentFrame, Player* player) {
-  static auto startTime = std::chrono::high_resolution_clock::now();
-
-  auto currentTime = std::chrono::high_resolution_clock::now();
-  float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-  calc::Mat4 rotation = calc::Mat4::MRotationY(player->rotX * M_PI / 180.0f) *  calc::Mat4::MRotationX(player->rotY * M_PI / 180.0f);
+  calc::Mat4 rotation = calc::Mat4::MRotationX(calc::degrees(player->mouseY)) *  calc::Mat4::MRotationY(calc::degrees(player->mouseX));
 
   calc::Mat4 translation = calc::Mat4::MIdentity();
   translation(0, 3) = -player->x;
@@ -1034,31 +1028,10 @@ void Renderer::updateUniformBuffer(bool currentFrame, Player* player) {
   translation(2, 3) = -player->z;
 
   UniformBufferObject ubo{};
-  ubo.view = rotation.transpose() * translation;
-  ubo.view = ubo.view.transpose();
-  ubo.model = calc::Mat4::MIdentity().transpose();
+  ubo.model = calc::Mat4::MIdentity();
+  ubo.trans = translation;
+  ubo.rot = rotation;
+  ubo.proj = calc::Mat4::perspective(player->getFOV(), static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height), 0.1f, 100.0f);
 
-  ///
-  float fov = 70.0f * M_PI / 180.0f;
-  float aspect = 800.0f / 600.0f;
-  float nearP = 0.1f;
-  float farP = 100.0f;
-
-  float f = 1.0f / tan(fov / 2.0f);
-
-  calc::Mat4 proj = calc::Mat4::MIdentity();
-
-  proj(0,0) = f / aspect;
-  proj(1,1) = f;
-  proj(2,2) = farP / (nearP - farP);
-  proj(2,3) = (farP * nearP) / (nearP - farP);
-  proj(3,2) = -1.0f;
-  proj(3,3) = 0.0f;
-
-  proj(1,1) *= -1.0f;
-
-  ubo.proj = proj.transpose();
-  //ubo.proj = calc::Mat4::MIdentity();
-  
   memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
 }

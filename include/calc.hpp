@@ -6,6 +6,10 @@
 #include <math.h>
 
 namespace calc {
+inline float degrees(float val) {
+  return val * M_PI / 180.0f;
+}
+
 class Vec2 {
 public:
   float x, y;
@@ -93,8 +97,6 @@ public:
 
   static Mat4 MRotationZ(float theta);
 
-  static Mat4 lookAt(const Vec4& v1, const Vec4& v2, const Vec4& v3);
-
-  static Mat4 perspective(float fov, float f1, float f2, float f3);
+  static Mat4 perspective(float fov, float aspect, float near, float far);
 };
 } // namespace calc

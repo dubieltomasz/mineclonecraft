@@ -165,10 +165,12 @@ float &Mat4::operator[](int index) { return this->array[index]; }
 const float &Mat4::operator[](int index) const { return this->array[index]; }
 
 float Mat4::operator()(int row, int col) const {
-  return this->array[row * 4 + col];
+  return this->array[col * 4 + row];
 }
 
-float &Mat4::operator()(int row, int col) { return this->array[row * 4 + col]; }
+float &Mat4::operator()(int row, int col) {
+  return this->array[col * 4 + row];
+}
 
 Mat4 Mat4::operator+(const Mat4 &matrix) const {
   Mat4 array(0.0f);
@@ -194,7 +196,7 @@ template <typename T> Mat4 Mat4::operator*(const T &value) const {
   Mat4 array(0.0f);
 
   for (int i = 0; i < 16; ++i) {
-    array[i] = this->array[i] * value;
+    array[i] *= value;
   }
 
   return array;
@@ -206,7 +208,7 @@ Mat4 Mat4::operator*(const Mat4 &matrix) const {
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
       for (int k = 0; k < 4; ++k) {
-        array[i * 4 + j] += this->array[i * 4 + k] * matrix[k * 4 + j];
+        array(i, j) += (*this)(i, k) * matrix(k, j);
       }
     }
   }
@@ -219,7 +221,7 @@ Vec4 Mat4::operator*(const Vec4 &vector) const {
 
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
-      result[i] += this->array[i * 4 + j] * vector[j];
+      result[i] += (*this)(i, j) * vector[j];
     }
   }
 
@@ -273,45 +275,16 @@ Mat4 Mat4::MRotationZ(float theta) {
   return matrix;
 }
 
-Mat4 Mat4::lookAt(const Vec4 &v1, const Vec4 &v2, const Vec4 &v3) {
-  Vec4 f = Vec4::normalize({v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, 0.0f});
-  Vec4 up = Vec4::normalize(v3);
-  Vec4 s = Vec4::normalize(Vec4::crossProduct(f, up));
-  Vec4 u = Vec4::crossProduct(s, f);
-
-  Mat4 result(1.0f);
-
-  result(0,0) = s.x;
-  result(1,0) = s.y;
-  result(2,0) = s.z;
-
-  result(0,1) = u.x;
-  result(1,1) = u.y;
-  result(2,1) = u.z;
-
-  result(0,2) = -f.x;
-  result(1,2) = -f.y;
-  result(2,2) = -f.z;
-
-  result(3,0) = -Vec4::dotProduct(s, v1);
-  result(3,1) = -Vec4::dotProduct(u, v1);
-  result(3,2) = Vec4::dotProduct(f, v1);
-
-  result(3, 3) = 1.0f;
-
-  return result;
-}
-
-Mat4 Mat4::perspective(float fov, float f1, float f2, float f3) {
+Mat4 Mat4::perspective(float fov, float aspect, float near, float far) {
   float tanHalfFov = std::tan(fov / 2.0f);
 
   Mat4 result(0.0f);
 
-  result(0,0) = 1.0f / (f1 * tanHalfFov);
-  result(1,1) = 1.0f / tanHalfFov;
-  result(2,2) = f3 / (f2 - f3);
-  result(2,3) = 1.0f;
-  result(3,2) = -(f3 * f2) / (f3 - f2);
+  result(0,0) = 1.0f / (aspect * tanHalfFov);
+  result(1,1) = -1.0f / tanHalfFov;
+  result(2,2) = far / (near - far);
+  result(2,3) = (far * near) / (near - far);
+  result(3,2) = -1.0f;
 
   return result;
 }

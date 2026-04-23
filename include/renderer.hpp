@@ -60,7 +60,7 @@ private:
   std::vector<VkDeviceMemory> uniformBuffersMemory;
   std::vector<void*> uniformBuffersMapped;
   VkDescriptorPool descriptorPool;
-std::vector<VkDescriptorSet> descriptorSets;
+  std::vector<VkDescriptorSet> descriptorSets;
 
   void createInstance();
   void createSurface();
@@ -79,6 +79,7 @@ std::vector<VkDescriptorSet> descriptorSets;
   void createDescriptorPool();
   void createDescriptorSets();
   void createCommandBuffers();
+  void createSyncObjects();
 
   SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
   VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -87,7 +88,7 @@ std::vector<VkDescriptorSet> descriptorSets;
   std::vector<char> readFile(const std::string& filename);
   VkShaderModule createShaderModule(const std::vector<char>& code, VkDevice device);
   void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline pipeline);
-  void recreateSwapChain();
+  void recreateSwapChain(Player* player);
   void cleanupSwapChain();
   uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
   void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
