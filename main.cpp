@@ -21,7 +21,7 @@
 #include <vulkan/vulkan.h>
 #include <cmath>
 #include <vector>
-#include <print>
+#include <iostream>
 #include <vulkan/vulkan_core.h>
 
 #define windowWidth 800
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
-    Player player(0.0f, 0.0f, -2.0f);
+    Player player(0.0f, 0.0f, 2.0f);
 
     std::array<calc::Vec2, 256> v = terrainGeneration::vectors(67);
 
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
       lastCheck = t;
 
       if(t - fpsTime >= freq) {
-        std::print("FPS: {}\r", std::to_string(frames * freq / (t - fpsTime)));
+        std::cout << std::to_string(frames * freq / (t - fpsTime)) << '\r';
         fpsTime = t;
         frames = 0;
       }
