@@ -24,6 +24,7 @@ private:
   uint32_t presentationFamilyIndices = 0;
   uint32_t graphicsFamilyIndices = 0;
   VkDevice device = NULL;
+  VkPhysicalDeviceProperties deviceProperties{};
   VkPhysicalDeviceFeatures deviceFeatures{};
   VkQueue graphicsQueue = NULL;
   VkSurfaceKHR surface = NULL;
@@ -61,6 +62,10 @@ private:
   std::vector<void*> uniformBuffersMapped;
   VkDescriptorPool descriptorPool;
   std::vector<VkDescriptorSet> descriptorSets;
+  VkImage textureImage;
+  VkDeviceMemory textureImageMemory;
+  VkImageView textureImageView;
+  VkSampler textureSampler;
 
   void createInstance();
   void createSurface();
@@ -73,6 +78,9 @@ private:
   void createGraphicalPipeline();
   void createFramebuffers();
   void createCommandPool();
+  void createTextureImage();
+  void createTextureImageView();
+  void createTextureSampler();
   void createVertexBuffer();
   void createIndexBuffer();
   void createUniformBuffers();
@@ -92,8 +100,14 @@ private:
   void cleanupSwapChain();
   uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
   void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+  void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
   void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
   void updateUniformBuffer(bool currentFrame, Player* player);
+  VkCommandBuffer beginSingleTimeCommands();
+  void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+  void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+  void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+  VkImageView createImageView(VkImage image, VkFormat format);
 
 public:
   Renderer(SDL_Window* window);
