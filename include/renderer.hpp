@@ -66,6 +66,9 @@ private:
   VkDeviceMemory textureImageMemory;
   VkImageView textureImageView;
   VkSampler textureSampler;
+  VkImage depthImage;
+  VkDeviceMemory depthImageMemory;
+  VkImageView depthImageView;
 
   void createInstance();
   void createSurface();
@@ -76,8 +79,9 @@ private:
   void createRenderPass();
   void createDescriptorSetLayout();
   void createGraphicalPipeline();
-  void createFramebuffers();
   void createCommandPool();
+  void createDepthResources();
+  void createFramebuffers();
   void createTextureImage();
   void createTextureImageView();
   void createTextureSampler();
@@ -107,7 +111,10 @@ private:
   void endSingleTimeCommands(VkCommandBuffer commandBuffer);
   void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
   void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-  VkImageView createImageView(VkImage image, VkFormat format);
+  VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+  VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+  VkFormat findDepthFormat();
+  bool hasStencilComponent(VkFormat format);
 
 public:
   Renderer(SDL_Window* window);
