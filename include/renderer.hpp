@@ -19,6 +19,7 @@ struct SwapChainSupportDetails {
 class Renderer {
 private:
   SDL_Window* window = nullptr;
+  bool currentFrame = 0;
   VkInstance instance = NULL;
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   uint32_t presentationFamilyIndices = 0;
@@ -69,6 +70,10 @@ private:
   VkImage depthImage;
   VkDeviceMemory depthImageMemory;
   VkImageView depthImageView;
+  VkSampleCountFlagBits msaaSamples;
+  VkImage colorImage;
+  VkDeviceMemory colorImageMemory;
+  VkImageView colorImageView;
 
   void createInstance();
   void createSurface();
@@ -80,6 +85,7 @@ private:
   void createDescriptorSetLayout();
   void createGraphicalPipeline();
   void createCommandPool();
+  void createColorResource();
   void createDepthResources();
   void createFramebuffers();
   void createTextureImage();
@@ -100,11 +106,11 @@ private:
   std::vector<char> readFile(const std::string& filename);
   VkShaderModule createShaderModule(const std::vector<char>& code, VkDevice device);
   void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline pipeline);
-  void recreateSwapChain(Player* player);
+  void recreateSwapChain();
   void cleanupSwapChain();
   uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
   void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-  void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+  void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSample, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
   void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
   void updateUniformBuffer(bool currentFrame, Player* player);
   VkCommandBuffer beginSingleTimeCommands();
@@ -115,6 +121,7 @@ private:
   VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
   VkFormat findDepthFormat();
   bool hasStencilComponent(VkFormat format);
+  VkSampleCountFlagBits getMaxUsableSampleCount();
 
 public:
   Renderer(SDL_Window* window);
