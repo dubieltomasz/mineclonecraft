@@ -9,6 +9,8 @@
 #include <string>
 #include <vulkan/vulkan_core.h>
 #include "player.hpp"
+#include "vertex.hpp"
+#include "terrain.hpp"
 
 struct SwapChainSupportDetails {
   VkSurfaceCapabilitiesKHR capabilities;
@@ -54,10 +56,6 @@ private:
   std::vector<VkFence> inFlightFences = {};
   VkPipeline graphicsPipeline;
   bool framebufferResized = false;
-  VkBuffer vertexBuffer;
-  VkDeviceMemory vertexBufferMemory;
-  VkBuffer indexBuffer;
-  VkDeviceMemory indexBufferMemory;
   std::vector<VkBuffer> uniformBuffers;
   std::vector<VkDeviceMemory> uniformBuffersMemory;
   std::vector<void*> uniformBuffersMapped;
@@ -91,8 +89,6 @@ private:
   void createTextureImage();
   void createTextureImageView();
   void createTextureSampler();
-  void createVertexBuffer();
-  void createIndexBuffer();
   void createUniformBuffers();
   void createDescriptorPool();
   void createDescriptorSets();
@@ -105,7 +101,7 @@ private:
   VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
   std::vector<char> readFile(const std::string& filename);
   VkShaderModule createShaderModule(const std::vector<char>& code, VkDevice device);
-  void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline pipeline);
+  void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline pipeline, Terrain& terrain);
   void recreateSwapChain();
   void cleanupSwapChain();
   uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -127,6 +123,8 @@ public:
   Renderer(SDL_Window* window);
   ~Renderer();
 
-  void drawFrame(Player* player);
+  void drawFrame(Player* player, Terrain& terrain);
   void windowResized();
+  void createVertexBuffer(const std::vector<Vertex>& vertices, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory);
+  void createIndexBuffer(const std::vector<uint32_t>& indices, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory);
 };

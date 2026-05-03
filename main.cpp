@@ -1,6 +1,4 @@
 #include "./include/player.hpp"
-#include "./include/terrainGeneration.hpp"
-#include "./include/chunk.hpp"
 #include "./include/renderer.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
@@ -20,9 +18,9 @@
 #include <SDL3/SDL_vulkan.h>
 #include <vulkan/vulkan.h>
 #include <cmath>
-#include <vector>
 #include <iostream>
 #include <vulkan/vulkan_core.h>
+#include "./include/terrain.hpp"
 
 #define windowWidth 800
 #define windowHeight 600
@@ -49,25 +47,9 @@ int main(int argc, char *argv[]) {
     }
 
     Player player(0.0f, 0.0f, 2.0f);
-
-    std::array<calc::Vec2, 256> v = terrainGeneration::vectors(67);
-
-    constexpr float scale = 0.01f;
-    std::vector<Chunk> chunks;
-
-    for(int i = 0; i < 8; ++i) {
-      for(int j = 0; j < 8; ++j) {
-        chunks.push_back(Chunk(i, 0, j, v, scale));
-      }
-    }
-
-    terrainGeneration::Terrain terrain = terrainGeneration::Terrain();
-    for(const Chunk& chunk : chunks) {
-      terrain.loadChunk(chunk);
-    }
-
-    /*std::vector<Surface> surfaces = {};
-    terrainGeneration::surfacesFromChunks(surfaces, chunks);*/
+    Terrain terrain = Terrain();
+    renderer.createVertexBuffer(terrain.vertices, terrain.vertexBuffer, terrain.vertexBufferMemory);
+    renderer.createIndexBuffer(terrain.indices, terrain.indexBuffer, terrain.indexBufferMemory);
 
     SDL_Event event;
     while (!shouldClose) {  
@@ -97,7 +79,7 @@ int main(int argc, char *argv[]) {
       }
       player.handleInput(dt);
 
-      renderer.drawFrame(&player);
+      renderer.drawFrame(&player, terrain);
     }
   }
 

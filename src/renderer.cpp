@@ -25,57 +25,6 @@
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 const float anisotropy = 4.0f;
-const float tilesPerWidth = 4.0f, tilesPerHeight = 4.0f, tileWidth = 1.0f / tilesPerWidth, tileHeight = 1.0f / tilesPerHeight;
-const float textureIndex = 1.0f;
-
-struct Vertex {
-  calc::Vec4 pos;
-  calc::Vec4 col;
-  calc::Vec2 texCoord;
-
-  static VkVertexInputBindingDescription getBindingDescription() {
-    VkVertexInputBindingDescription bindingDescription{};
-    bindingDescription.binding = 0;
-    bindingDescription.stride = sizeof(Vertex);
-    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    return bindingDescription;
-  }
-
-  static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
-    attributeDescriptions[0].binding = 0;
-    attributeDescriptions[0].location = 0;
-    attributeDescriptions[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    attributeDescriptions[0].offset = offsetof(Vertex, pos);
-    attributeDescriptions[1].binding = 0;
-    attributeDescriptions[1].location = 1;
-    attributeDescriptions[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    attributeDescriptions[1].offset = offsetof(Vertex, col);
-    attributeDescriptions[2].binding = 0;
-    attributeDescriptions[2].location = 2;
-    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-    attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
-
-    return attributeDescriptions;
-  }
-};
-
-const std::vector<Vertex> vertices = { // FIXME: there is something wrong with calculating coords form index
-  {{0.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {std::fmod(textureIndex, tilesPerWidth) * tileWidth, tileHeight * std::floor(tilesPerWidth / textureIndex)}},
-  {{1.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {std::fmod(textureIndex, tilesPerWidth) * tileWidth + tileWidth, tileHeight * std::floor(tilesPerWidth / textureIndex)}},
-  {{0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {std::fmod(textureIndex, tilesPerWidth) * tileWidth, tileHeight * std::floor(tilesPerWidth / textureIndex + 1)}},
-  {{1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {std::fmod(textureIndex, tilesPerWidth) * tileWidth + tileWidth, tileHeight * std::floor(tilesPerWidth / textureIndex + 1)}},
-  {{1.0f, 2.0f, 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {std::fmod(textureIndex, tilesPerWidth) * tileWidth, tileHeight * std::floor(tilesPerWidth / textureIndex)}},
-  {{2.0f, 2.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {std::fmod(textureIndex, tilesPerWidth) * tileWidth + tileWidth, tileHeight * std::floor(tilesPerWidth / textureIndex)}},
-  {{1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {std::fmod(textureIndex, tilesPerWidth) * tileWidth, tileHeight * std::floor(tilesPerWidth / textureIndex + 1)}},
-  {{2.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {std::fmod(textureIndex, tilesPerWidth) * tileWidth + tileWidth, tileHeight * std::floor(tilesPerWidth / textureIndex + 1)}}
-};
-
-const std::vector<uint16_t> indices = {
-  0, 1, 2, 1, 2, 3,
-  4, 5, 6, 5, 6, 7
-};
 
 struct UniformBufferObject {
   calc::Mat4 model;
@@ -480,7 +429,7 @@ void Renderer::createGraphicalPipeline() {
   rasterizer.rasterizerDiscardEnable = VK_FALSE;
   rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
   rasterizer.lineWidth = 1.0f;
-  rasterizer.cullMode = VK_CULL_MODE_NONE; // TODO: stop rendering back of triangles
+  rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
   rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
   rasterizer.depthBiasEnable = VK_FALSE;
 
@@ -679,7 +628,7 @@ void Renderer::createTextureSampler() {
   }
 }
 
-void Renderer::createVertexBuffer() {
+void Renderer::createVertexBuffer(const std::vector<Vertex>& vertices, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory) {
   VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
   VkBuffer stagingBuffer;
@@ -699,7 +648,7 @@ void Renderer::createVertexBuffer() {
   vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
-void Renderer::createIndexBuffer() {
+void Renderer::createIndexBuffer(const std::vector<uint32_t>& indices, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory) {
   VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
   VkBuffer stagingBuffer;
@@ -854,8 +803,8 @@ Renderer::Renderer(SDL_Window* window) {
   this->createTextureImage();
   this->createTextureImageView();
   this->createTextureSampler();
-  this->createVertexBuffer();
-  this->createIndexBuffer();
+  //this->createVertexBuffer(vertices, vertexBuffer, vertexBufferMemory);
+  //this->createIndexBuffer();
   this->createUniformBuffers();
   this->createDescriptorPool();
   this->createDescriptorSets();
@@ -879,11 +828,12 @@ Renderer::~Renderer() {
   vkDestroyDescriptorPool(device, descriptorPool, nullptr);
   vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 
-  vkDestroyBuffer(device, indexBuffer, nullptr);
-  vkFreeMemory(device, indexBufferMemory, nullptr);
-  
-  vkDestroyBuffer(device, vertexBuffer, nullptr);
-  vkFreeMemory(device, vertexBufferMemory, nullptr);
+  // TODO: use it
+  //vkDestroyBuffer(device, indexBuffer, nullptr);
+  //vkFreeMemory(device, indexBufferMemory, nullptr);
+
+  //vkDestroyBuffer(device, vertexBuffer, nullptr);
+  //vkFreeMemory(device, vertexBufferMemory, nullptr);
 
   vkDestroyPipeline(device, graphicsPipeline, nullptr);
   vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
@@ -902,7 +852,7 @@ Renderer::~Renderer() {
   vkDestroyInstance(instance, nullptr);
 }
 
-void Renderer::drawFrame(Player* player) {
+void Renderer::drawFrame(Player* player, Terrain& terrain) {
   vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
   uint32_t imageIndex;
@@ -915,14 +865,16 @@ void Renderer::drawFrame(Player* player) {
   }
 
   vkResetFences(device, 1, &inFlightFences[currentFrame]);
+  vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 
   recordCommandBuffer(
-  commandBuffers[currentFrame],
-  imageIndex,
-  renderPass,
-  swapChainFramebuffers[imageIndex],
-  swapChainExtent,
-  graphicsPipeline
+    commandBuffers[currentFrame],
+    imageIndex,
+    renderPass,
+    swapChainFramebuffers[imageIndex],
+    swapChainExtent,
+    graphicsPipeline,
+    terrain
   );
 
   updateUniformBuffer(currentFrame, player);
@@ -1105,7 +1057,8 @@ void Renderer::recordCommandBuffer(
   VkRenderPass renderPass,
   VkFramebuffer framebuffer,
   VkExtent2D extent,
-  VkPipeline pipeline
+  VkPipeline pipeline,
+  Terrain& terrain
 ) {
   VkCommandBufferBeginInfo beginInfo{};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1142,15 +1095,16 @@ void Renderer::recordCommandBuffer(
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
   vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-  VkBuffer vertexBuffers[] = {vertexBuffer};
+  VkBuffer vertexBuffers[] = {terrain.vertexBuffer};
   VkDeviceSize offsets[] = {0};
 
   vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-  vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16); // TODO: change to 32 if too small
+  vkCmdBindIndexBuffer(commandBuffer, terrain.indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
   vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
-  vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+  // TODO: Add drawing per batch/chunk
+  vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(terrain.indices.size()), 1, 0, 0, 0);
 
   vkCmdEndRenderPass(commandBuffer);
   vkEndCommandBuffer(commandBuffer);
