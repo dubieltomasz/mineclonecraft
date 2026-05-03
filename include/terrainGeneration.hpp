@@ -2,7 +2,7 @@
 
 #include "calc.hpp"
 #include "chunk.hpp"
-#include "renderer.hpp"
+#include "vertex.hpp"
 #include <array>
 #include <math.h>
 #include <vector>
@@ -30,9 +30,7 @@ public:
   void loadChunk(const Chunk& chunk);
   
   inline void loadVertex(int x, int y, int z);
-
-  std::vector<Surface> terrainToSurfaces();
 };
 
-void surfacesFromChunks(std::vector<Surface>& surfaces, const std::vector<Chunk>& chunks);
+void surfacesFromChunks(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, const std::vector<Chunk> &chunks);
 } // namespace terrainGeneration

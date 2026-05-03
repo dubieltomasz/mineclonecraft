@@ -1,124 +1,130 @@
 #pragma once
 
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
-#include "player.hpp"
+#include <SDL3/SDL_vulkan.h>
 #include <cstdint>
-#include <string>
+#include <vulkan/vulkan.h>
 #include <vector>
+#include <string>
+#include <vulkan/vulkan_core.h>
+#include "player.hpp"
+#include "vertex.hpp"
+#include "terrain.hpp"
 
-struct Tri {
-  int ind1, ind2, ind3;
-  float dist;
-};
-
-class Surface {
-public:
-  float x, y, z;
-  uint32_t texCorAndNormal;
-
-  inline uint8_t getTextureIndex() const {
-    return this->texCorAndNormal >> 24;
-  }
-
-  inline uint8_t getAO() const {
-    return static_cast<uint8_t>((this->texCorAndNormal & 0b11111111000) >> 3);
-  }
-
-  inline uint8_t getNormal() const {
-    return this->texCorAndNormal & 0b111;
-  }
-
-  inline float centerX() const {
-    switch(this->getNormal()) {
-      case 0b000:
-        return this->x + 0.5f;
-      case 0b001:
-        return this->x;
-      case 0b010:
-        return this->x + 0.5f;
-      case 0b100:
-        return this->x + 0.5f;
-      case 0b101:
-        return this->x + 1.0f;
-      default:
-        return this->x + 0.5f;
-    }
-  }
-
-  inline float centerY() const {
-    switch(this->getNormal()) {
-      case 0b000:
-        return this->x;
-      case 0b001:
-        return this->x + 0.5f;
-      case 0b010:
-        return this->x + 0.5f;
-      case 0b100:
-        return this->x + 1.0f;
-      case 0b101:
-        return this->x + 0.5f;
-      default:
-        return this->x + 0.5f;
-    }
-  }
-
-  inline float centerZ() const {
-    switch(this->getNormal()) {
-      case 0b000:
-        return this->x + 0.5f;
-      case 0b001:
-        return this->x + 0.5f;
-      case 0b010:
-        return this->x;
-      case 0b100:
-        return this->x + 0.5f;
-      case 0b101:
-        return this->x + 0.5f;
-      default:
-        return this->x + 1.0f;
-    }
-  }
+struct SwapChainSupportDetails {
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> presentModes;
 };
 
 class Renderer {
+private:
+  SDL_Window* window = nullptr;
+  bool currentFrame = 0;
+  VkInstance instance = NULL;
+  VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+  uint32_t presentationFamilyIndices = 0;
+  uint32_t graphicsFamilyIndices = 0;
+  VkDevice device = NULL;
+  VkPhysicalDeviceProperties deviceProperties{};
+  VkPhysicalDeviceFeatures deviceFeatures{};
+  VkQueue graphicsQueue = NULL;
+  VkSurfaceKHR surface = NULL;
+  VkQueue presentQueue = NULL;
+  float queuePriority = 1.0f;
+  const std::vector<const char*> deviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+  };
+  VkSwapchainKHR swapChain = NULL;
+  std::vector<VkImage> swapChainImages = {};
+  VkFormat swapChainImageFormat;
+  VkExtent2D swapChainExtent;
+  std::vector<VkImageView> swapChainImageViews = {};
+  std::vector<VkDynamicState> dynamicStates = {
+    VK_DYNAMIC_STATE_VIEWPORT,
+    VK_DYNAMIC_STATE_SCISSOR
+  };
+  VkRenderPass renderPass;
+  VkDescriptorSetLayout descriptorSetLayout;
+  VkPipelineLayout pipelineLayout;
+  std::vector<VkFramebuffer> swapChainFramebuffers;
+  VkCommandPool commandPool;
+  std::vector<VkCommandBuffer> commandBuffers = {};
+  std::vector<VkSemaphore> imageAvailableSemaphores = {};
+  std::vector<VkSemaphore> renderFinishedSemaphores = {};
+  std::vector<VkFence> inFlightFences = {};
+  VkPipeline graphicsPipeline;
+  bool framebufferResized = false;
+  std::vector<VkBuffer> uniformBuffers;
+  std::vector<VkDeviceMemory> uniformBuffersMemory;
+  std::vector<void*> uniformBuffersMapped;
+  VkDescriptorPool descriptorPool;
+  std::vector<VkDescriptorSet> descriptorSets;
+  VkImage textureImage;
+  VkDeviceMemory textureImageMemory;
+  VkImageView textureImageView;
+  VkSampler textureSampler;
+  VkImage depthImage;
+  VkDeviceMemory depthImageMemory;
+  VkImageView depthImageView;
+  VkSampleCountFlagBits msaaSamples;
+  VkImage colorImage;
+  VkDeviceMemory colorImageMemory;
+  VkImageView colorImageView;
+
+  void createInstance();
+  void createSurface();
+  std::vector<VkDeviceQueueCreateInfo> pickPhysicalDevice();
+  void createLogicalDevice(std::vector<VkDeviceQueueCreateInfo> queueCreateInfo);
+  void createSwapChain();
+  void createImageViews();
+  void createRenderPass();
+  void createDescriptorSetLayout();
+  void createGraphicalPipeline();
+  void createCommandPool();
+  void createColorResource();
+  void createDepthResources();
+  void createFramebuffers();
+  void createTextureImage();
+  void createTextureImageView();
+  void createTextureSampler();
+  void createUniformBuffers();
+  void createDescriptorPool();
+  void createDescriptorSets();
+  void createCommandBuffers();
+  void createSyncObjects();
+
+  SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
+  VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+  VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+  VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+  std::vector<char> readFile(const std::string& filename);
+  VkShaderModule createShaderModule(const std::vector<char>& code, VkDevice device);
+  void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline pipeline, Terrain& terrain);
+  void recreateSwapChain();
+  void cleanupSwapChain();
+  uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+  void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+  void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSample, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+  void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+  void updateUniformBuffer(bool currentFrame, Player* player);
+  VkCommandBuffer beginSingleTimeCommands();
+  void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+  void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+  void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+  VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+  VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+  VkFormat findDepthFormat();
+  bool hasStencilComponent(VkFormat format);
+  VkSampleCountFlagBits getMaxUsableSampleCount();
+
 public:
-  SDL_Renderer* renderer;
-  SDL_Texture* texture;
-  int r, g, b;
-
-  Renderer(SDL_Window* window, int r, int g, int b);
-
+  Renderer(SDL_Window* window);
   ~Renderer();
 
-  bool ok();
-
-  void makeTrianglesWithIndices(const std::vector<Surface>& surfaces, std::vector<SDL_Vertex>& triangles, std::vector<Tri>& indices, const Player& player);
-
-  Renderer& prepare();
-
-  Renderer& terrain(const std::vector<Surface>& surfaces, const Player& player);
-
-  Renderer& hud(const std::vector<std::string>& strings, const std::vector<std::pair<int, int>>& positions);
-
-  void render();
-
-  enum surfaceDirection : uint32_t {
-    FaceBottom = 0b000,
-    FaceLeft,
-    FaceBack,
-    FaceTop = 0b100,
-    FaceRight,
-    FaceFront,
-    SurfaceNormal = 0b111
-  };
-
-  enum AO : uint32_t {
-    FullDark = 0b00,
-    VeryDark = 0b01,
-    LittleDark = 0b10,
-    NotDark = 0b11,
-    VertexAO = 0b11
-  };
+  void drawFrame(Player* player, Terrain& terrain);
+  void windowResized();
+  void createVertexBuffer(const std::vector<Vertex>& vertices, VkBuffer& vertexBuffer, VkDeviceMemory& vertexBufferMemory);
+  void createIndexBuffer(const std::vector<uint32_t>& indices, VkBuffer& indexBuffer, VkDeviceMemory& indexBufferMemory);
 };

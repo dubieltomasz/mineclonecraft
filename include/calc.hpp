@@ -6,6 +6,10 @@
 #include <math.h>
 
 namespace calc {
+inline float degrees(float val) {
+  return val * M_PI / 180.0f;
+}
+
 class Vec2 {
 public:
   float x, y;
@@ -15,6 +19,8 @@ public:
   Vec2(const float& x1, const float& y1, const float& x2, const float& y2);
 
   Vec2(float theta);
+
+  Vec2(float x, float y);
 
   float operator*(const Vec2 &v) const;
 };
@@ -41,6 +47,8 @@ public:
   template <typename T> Vec4 operator/(const T &value) const;
 
   static float dotProduct(const Vec4 &v1, const Vec4 &v2);
+  static Vec4 normalize(const Vec4& v);
+  static Vec4 crossProduct(const Vec4 &v1, const Vec4 &v2);
 
   bool operator==(const Vec4 &v) const;
 
@@ -88,5 +96,7 @@ public:
   static Mat4 MRotationY(float theta);
 
   static Mat4 MRotationZ(float theta);
+
+  static Mat4 perspective(float fov, float aspect, float near, float far);
 };
 } // namespace calc

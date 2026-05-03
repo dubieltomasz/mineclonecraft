@@ -17,6 +17,11 @@ Vec2::Vec2(float theta) {
   this->y = std::sin(theta);
 }
 
+Vec2::Vec2(float x, float y) {
+  this->x = x;
+  this->y = y;
+}
+
 float Vec2::operator*(const Vec2 &v) const {
   return this->x * v.x + this->y * v.y;
 }
@@ -70,8 +75,27 @@ template <typename T> Vec4 Vec4::operator/(const T &value) const {
   return {this->x / value, this->y / value, this->z / value, this->w / value};
 }
 
-static float dotProduct(const Vec4 &v1, const Vec4 &v2) {
+float Vec4::dotProduct(const Vec4 &v1, const Vec4 &v2) {
   return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v1.w * v2.w;
+}
+
+Vec4 Vec4::normalize(const Vec4 &v) {
+  float mag = std::sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+
+  if(mag < 1e-6f) {
+    return {0, 0, 0, 0};
+  } else {
+    return {v.x / mag, v.y / mag, v.z / mag, 0.0f};
+  }
+}
+
+Vec4 Vec4::crossProduct(const Vec4 &v1, const Vec4 &v2) {
+  return {
+    v1.y * v2.z - v1.z * v2.y,
+    v1.z * v2.x - v1.x * v2.z,
+    v1.x * v2.y - v1.y * v2.x,
+    0.0f
+  };
 }
 
 bool Vec4::operator==(const Vec4 &v) const {
@@ -141,10 +165,12 @@ float &Mat4::operator[](int index) { return this->array[index]; }
 const float &Mat4::operator[](int index) const { return this->array[index]; }
 
 float Mat4::operator()(int row, int col) const {
-  return this->array[row * 4 + col];
+  return this->array[col * 4 + row];
 }
 
-float &Mat4::operator()(int row, int col) { return this->array[row * 4 + col]; }
+float &Mat4::operator()(int row, int col) {
+  return this->array[col * 4 + row];
+}
 
 Mat4 Mat4::operator+(const Mat4 &matrix) const {
   Mat4 array(0.0f);
@@ -170,7 +196,7 @@ template <typename T> Mat4 Mat4::operator*(const T &value) const {
   Mat4 array(0.0f);
 
   for (int i = 0; i < 16; ++i) {
-    array[i] = this->array[i] * value;
+    array[i] *= value;
   }
 
   return array;
@@ -182,7 +208,7 @@ Mat4 Mat4::operator*(const Mat4 &matrix) const {
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
       for (int k = 0; k < 4; ++k) {
-        array[i * 4 + j] += this->array[i * 4 + k] * matrix[k * 4 + j];
+        array(i, j) += (*this)(i, k) * matrix(k, j);
       }
     }
   }
@@ -195,7 +221,7 @@ Vec4 Mat4::operator*(const Vec4 &vector) const {
 
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
-      result[i] += this->array[i * 4 + j] * vector[j];
+      result[i] += (*this)(i, j) * vector[j];
     }
   }
 
@@ -247,5 +273,19 @@ Mat4 Mat4::MRotationZ(float theta) {
   matrix[5] = std::cos(theta);
 
   return matrix;
+}
+
+Mat4 Mat4::perspective(float fov, float aspect, float near, float far) {
+  float tanHalfFov = std::tan(fov / 2.0f);
+
+  Mat4 result(0.0f);
+
+  result(0,0) = 1.0f / (aspect * tanHalfFov);
+  result(1,1) = -1.0f / tanHalfFov;
+  result(2,2) = far / (near - far);
+  result(2,3) = (far * near) / (near - far);
+  result(3,2) = -1.0f;
+
+  return result;
 }
 } // namespace calc

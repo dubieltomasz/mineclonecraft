@@ -138,97 +138,102 @@ void terrainGeneration::Terrain::loadChunk(const Chunk& chunk) {
   }
 }
 
-void terrainGeneration::surfacesFromChunks(std::vector<Surface> &surfaces, const std::vector<Chunk> &chunks) {
-  surfaces.reserve(surfaces.size() + 6 * 16 * 16);
+void terrainGeneration::surfacesFromChunks(std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, const std::vector<Chunk> &chunks) {
+  vertices.clear();
+  indices.clear();
+  vertices.reserve(8 * 16 * 16 * 16);
+  indices.reserve(3 * 8 * 16 * 16 * 16);
+  uint32_t index = 0;
 
   for(const Chunk& chunk : chunks) {
     for(int chunkY = 0; chunkY < 16; ++chunkY) {
       for(int chunkX = 0; chunkX < 16; ++chunkX) {
         for(int chunkZ = 0; chunkZ < 16; ++chunkZ) {
           if(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)] != Block::Air) {
+            Block::Blocks block = chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)];
             //bot
             if(chunkY == 0 || chunk.blocks[chunkZ + (chunkX << 4) + ((chunkY - 1) << 8)] == Block::Air) {
-              surfaces.push_back({
-                static_cast<float>(chunk.x + chunkX),
-                static_cast<float>(chunk.y + chunkY),
-                static_cast<float>(chunk.z + chunkZ),
-                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8))
-                | Renderer::AO::NotDark << 3
-                | Renderer::AO::NotDark << 5
-                | Renderer::AO::NotDark << 7
-                | Renderer::AO::NotDark << 9
-                | Renderer::FaceBottom
-              });
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f / 4.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {2.0f / 4.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}});
+              indices.push_back(index);
+              indices.push_back(index + 1);
+              indices.push_back(index + 2);
+              indices.push_back(index + 1);
+              indices.push_back(index + 3);
+              indices.push_back(index + 2);
+              index += 4;
             }
             //left
             if(chunkX == 0 || chunk.blocks[chunkZ + ((chunkX - 1) << 4) + (chunkY << 8)] == Block::Air) {
-              surfaces.push_back({
-                static_cast<float>(chunk.x + chunkX),
-                static_cast<float>(chunk.y + chunkY),
-                static_cast<float>(chunk.z + chunkZ),
-                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8))
-                | Renderer::AO::NotDark << 3
-                | Renderer::AO::NotDark << 5
-                | Renderer::AO::NotDark << 7
-                | Renderer::AO::NotDark << 9
-                | Renderer::FaceLeft
-              });
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f / 4.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {2.0f / 4.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}});
+              indices.push_back(index);
+              indices.push_back(index + 1);
+              indices.push_back(index + 2);
+              indices.push_back(index + 1);
+              indices.push_back(index + 3);
+              indices.push_back(index + 2);
+              index += 4;
             }
             //back
             if(chunkZ == 0 || chunk.blocks[(chunkZ - 1) + (chunkX << 4) + (chunkY << 8)] == Block::Air) {
-              surfaces.push_back({
-                static_cast<float>(chunk.x + chunkX),
-                static_cast<float>(chunk.y + chunkY),
-                static_cast<float>(chunk.z + chunkZ),
-                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8))
-                | Renderer::AO::NotDark << 3
-                | Renderer::AO::NotDark << 5
-                | Renderer::AO::NotDark << 7
-                | Renderer::AO::NotDark << 9
-                | Renderer::FaceBack
-              });
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f / 4.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {2.0f / 4.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}});
+              indices.push_back(index);
+              indices.push_back(index + 1);
+              indices.push_back(index + 2);
+              indices.push_back(index + 1);
+              indices.push_back(index + 3);
+              indices.push_back(index + 2);
+              index += 4;
             }
             //top
             if(chunkY == 15 || chunk.blocks[chunkZ + (chunkX << 4) + ((chunkY + 1) << 8)] == Block::Air) {
-              surfaces.push_back({
-                static_cast<float>(chunk.x + chunkX),
-                static_cast<float>(chunk.y + chunkY),
-                static_cast<float>(chunk.z + chunkZ),
-                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8))
-                | Renderer::AO::NotDark << 3
-                | Renderer::AO::NotDark << 5
-                | Renderer::AO::NotDark << 7
-                | Renderer::AO::NotDark << 9
-                | Renderer::FaceTop
-              });
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f / 4.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {2.0f / 4.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}});
+              indices.push_back(index);
+              indices.push_back(index + 1);
+              indices.push_back(index + 2);
+              indices.push_back(index + 1);
+              indices.push_back(index + 3);
+              indices.push_back(index + 2);
+              index += 4;
             }
             //right
             if(chunkX == 15 || chunk.blocks[chunkZ + ((chunkX + 1) << 4) + (chunkY << 8)] == Block::Air) {
-              surfaces.push_back({
-                static_cast<float>(chunk.x + chunkX),
-                static_cast<float>(chunk.y + chunkY),
-                static_cast<float>(chunk.z + chunkZ),
-                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8))
-                | Renderer::AO::NotDark << 3
-                | Renderer::AO::NotDark << 5
-                | Renderer::AO::NotDark << 7
-                | Renderer::AO::NotDark << 9
-                | Renderer::FaceRight
-              });
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f / 4.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {2.0f / 4.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}});
+              indices.push_back(index);
+              indices.push_back(index + 1);
+              indices.push_back(index + 2);
+              indices.push_back(index + 1);
+              indices.push_back(index + 3);
+              indices.push_back(index + 2);
+              index += 4;
             }
             //front
             if(chunkZ == 15 || chunk.blocks[(chunkZ + 1) + (chunkX << 4) + (chunkY << 8)] == Block::Air) {
-              surfaces.push_back({
-                static_cast<float>(chunk.x + chunkX),
-                static_cast<float>(chunk.y + chunkY),
-                static_cast<float>(chunk.z + chunkZ),
-                (static_cast<uint32_t>(chunk.blocks[chunkZ + (chunkX << 4) + (chunkY << 8)]) << (32-8))
-                | Renderer::AO::NotDark << 3
-                | Renderer::AO::NotDark << 5
-                | Renderer::AO::NotDark << 7
-                | Renderer::AO::NotDark << 9
-                | Renderer::FaceFront
-              });
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f / 4.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {2.0f / 4.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}});
+              indices.push_back(index);
+              indices.push_back(index + 1);
+              indices.push_back(index + 2);
+              indices.push_back(index + 1);
+              indices.push_back(index + 3);
+              indices.push_back(index + 2);
+              index += 4;
             }
           }
         }
