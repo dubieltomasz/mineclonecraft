@@ -8,7 +8,7 @@
 class Chunk {
 public:
   int x, y, z;
-  std::array<Block::Blocks, 16 * 16 * 16> blocks;
+  std::array<Block::Type, 16 * 16 * 16> blocks;
 
   Chunk();
   Chunk(int x, int y, int z, const std::array<calc::Vec2, 256>& v, float scale);

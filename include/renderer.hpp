@@ -47,14 +47,14 @@ private:
   };
   VkRenderPass renderPass;
   VkDescriptorSetLayout descriptorSetLayout;
-  VkPipelineLayout pipelineLayout;
+  std::vector<std::vector<VkPipelineLayout>> pipelineLayout = {{}, {}};
   std::vector<VkFramebuffer> swapChainFramebuffers;
   VkCommandPool commandPool;
   std::vector<VkCommandBuffer> commandBuffers = {};
   std::vector<VkSemaphore> imageAvailableSemaphores = {};
   std::vector<VkSemaphore> renderFinishedSemaphores = {};
   std::vector<VkFence> inFlightFences = {};
-  VkPipeline graphicsPipeline;
+  std::vector<std::vector<VkPipeline>> graphicsPipeline = {{}, {}};
   bool framebufferResized = false;
   std::vector<VkBuffer> uniformBuffers;
   std::vector<VkDeviceMemory> uniformBuffersMemory;
@@ -101,7 +101,7 @@ private:
   VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
   std::vector<char> readFile(const std::string& filename);
   VkShaderModule createShaderModule(const std::vector<char>& code, VkDevice device);
-  void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, VkPipeline pipeline, Terrain& terrain);
+  void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, VkRenderPass renderPass, VkFramebuffer framebuffer, VkExtent2D extent, std::vector<VkPipelineLayout> pipelineLayout, std::vector<VkPipeline> pipeline, Terrain& terrain);
   void recreateSwapChain();
   void cleanupSwapChain();
   uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -118,6 +118,7 @@ private:
   VkFormat findDepthFormat();
   bool hasStencilComponent(VkFormat format);
   VkSampleCountFlagBits getMaxUsableSampleCount();
+  std::pair<VkPipelineLayout, VkPipeline> createPipeline(const std::string& vertShader, const std::string& fragShader, const VkPolygonMode& polygonMode);
 
 public:
   Renderer(SDL_Window* window);

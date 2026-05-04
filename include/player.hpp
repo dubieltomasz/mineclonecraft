@@ -12,6 +12,7 @@ public:
   float z;
   float mouseX;
   float mouseY;
+  uint32_t renderType = 0;
   const float FOV = 45.0f;
 
   Player(float x, float y, float z);
