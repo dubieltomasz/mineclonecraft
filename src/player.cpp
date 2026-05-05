@@ -28,11 +28,7 @@ void Player::handleEvent(const SDL_Event& event) {
 
   if(event.type == SDL_EVENT_KEY_DOWN) {
     if(event.key.key == SDLK_P) {
-      if(this->renderType == 0) {
-        this->renderType = 1;
-      } else {
-        this->renderType = 0;
-      }
+      this->renderType = (this->renderType + 1) % 3;
     }
   }
 }

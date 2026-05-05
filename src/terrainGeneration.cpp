@@ -154,10 +154,10 @@ void terrainGeneration::surfacesFromChunks(std::vector<Vertex>& vertices, std::v
             Color color = Block::mapColor(block);
             //bot
             if(chunkY == 0 || chunk.blocks[chunkZ + (chunkX << 4) + ((chunkY - 1) << 8)] == Block::Air) {
-              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 0.0f}});
-              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 0.0f}});
-              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}});
-              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 0.0f}, {0.0f, -1.0f, 0.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 0.0f}, {0.0f, -1.0f, 0.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}, {0.0f, -1.0f, 0.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}, {0.0f, -1.0f, 0.0f, 0.0f}});
               indices.push_back(index);
               indices.push_back(index + 1);
               indices.push_back(index + 2);
@@ -168,10 +168,10 @@ void terrainGeneration::surfacesFromChunks(std::vector<Vertex>& vertices, std::v
             }
             //left
             if(chunkX == 0 || chunk.blocks[chunkZ + ((chunkX - 1) << 4) + (chunkY << 8)] == Block::Air) {
-              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 0.0f}});
-              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 0.0f}});
-              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}});
-              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 0.0f}, {-1.0f, 0.0f, 0.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 0.0f}, {-1.0f, 0.0f, 0.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}, {-1.0f, 0.0f, 0.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}, {-1.0f, 0.0f, 0.0f, 0.0f}});
               indices.push_back(index);
               indices.push_back(index + 1);
               indices.push_back(index + 2);
@@ -182,10 +182,10 @@ void terrainGeneration::surfacesFromChunks(std::vector<Vertex>& vertices, std::v
             }
             //back
             if(chunkZ == 0 || chunk.blocks[(chunkZ - 1) + (chunkX << 4) + (chunkY << 8)] == Block::Air) {
-              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 0.0f}});
-              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 0.0f}});
-              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}});
-              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 0.0f}, {0.0f, 0.0f, -1.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 0.0f}, {0.0f, 0.0f, -1.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}, {0.0f, 0.0f, -1.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}, {0.0f, 0.0f, -1.0f, 0.0f}});
               indices.push_back(index);
               indices.push_back(index + 1);
               indices.push_back(index + 2);
@@ -196,10 +196,10 @@ void terrainGeneration::surfacesFromChunks(std::vector<Vertex>& vertices, std::v
             }
             //top
             if(chunkY == 15 || chunk.blocks[chunkZ + (chunkX << 4) + ((chunkY + 1) << 8)] == Block::Air) {
-              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 0.0f}});
-              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 0.0f}});
-              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}});
-              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 0.0f}, {0.0f, 1.0f, 0.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 0.0f}, {0.0f, 1.0f, 0.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}, {0.0f, 1.0f, 0.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}, {0.0f, 1.0f, 0.0f, 0.0f}});
               indices.push_back(index);
               indices.push_back(index + 1);
               indices.push_back(index + 2);
@@ -210,10 +210,10 @@ void terrainGeneration::surfacesFromChunks(std::vector<Vertex>& vertices, std::v
             }
             //right
             if(chunkX == 15 || chunk.blocks[chunkZ + ((chunkX + 1) << 4) + (chunkY << 8)] == Block::Air) {
-              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 0.0f}});
-              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 0.0f}});
-              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}});
-              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}, {1.0f, 0.0f, 0.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 0.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}, {1.0f, 0.0f, 0.0f, 0.0f}});
               indices.push_back(index);
               indices.push_back(index + 1);
               indices.push_back(index + 2);
@@ -224,10 +224,10 @@ void terrainGeneration::surfacesFromChunks(std::vector<Vertex>& vertices, std::v
             }
             //front
             if(chunkZ == 15 || chunk.blocks[(chunkZ + 1) + (chunkX << 4) + (chunkY << 8)] == Block::Air) {
-              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 0.0f}});
-              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 0.0f}});
-              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}});
-              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 0.0f}, {0.0f, 0.0f, 1.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 1.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 0.0f}, {0.0f, 0.0f, 1.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 0.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {1.0f / 4.0f, 1.0f / 4.0f}, {0.0f, 0.0f, 1.0f, 0.0f}});
+              vertices.push_back({{chunk.x + chunkX + 1.0f, chunk.y + chunkY + 0.0f, chunk.z + chunkZ + 1.0f, 1.0f}, {color.r, color.g, color.b, 1.0f}, {2.0f / 4.0f, 1.0f / 4.0f}, {0.0f, 0.0f, 1.0f, 0.0f}});
               indices.push_back(index);
               indices.push_back(index + 1);
               indices.push_back(index + 2);

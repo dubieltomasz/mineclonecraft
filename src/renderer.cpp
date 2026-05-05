@@ -366,15 +366,18 @@ void Renderer::createDescriptorSetLayout() {
 
 void Renderer::createGraphicalPipeline() {
   std::pair<VkPipelineLayout, VkPipeline> p1 = createPipeline("../shaders/vert.spv", "../shaders/frag.spv", VK_POLYGON_MODE_FILL);
-  std::pair<VkPipelineLayout, VkPipeline> p2 = createPipeline("../shaders/vert.spv", "../shaders/flat.spv", VK_POLYGON_MODE_FILL);
-  std::pair<VkPipelineLayout, VkPipeline> p3 = createPipeline("../shaders/vert.spv", "../shaders/black.spv", VK_POLYGON_MODE_LINE);
+  std::pair<VkPipelineLayout, VkPipeline> p2 = createPipeline("../shaders/vert.spv", "../shaders/flat.frag.spv", VK_POLYGON_MODE_FILL);
+  std::pair<VkPipelineLayout, VkPipeline> p3 = createPipeline("../shaders/vert.spv", "../shaders/black.frag.spv", VK_POLYGON_MODE_LINE);
+  std::pair<VkPipelineLayout, VkPipeline> p4 = createPipeline("../shaders/normal.vert.spv", "../shaders/normal.frag.spv", VK_POLYGON_MODE_FILL);
 
   pipelineLayout[0].push_back(p1.first);
   pipelineLayout[1].push_back(p2.first);
   pipelineLayout[1].push_back(p3.first);
+  pipelineLayout[2].push_back(p4.first);
   graphicsPipeline[0].push_back(p1.second);
   graphicsPipeline[1].push_back(p2.second);
   graphicsPipeline[1].push_back(p3.second);
+  graphicsPipeline[2].push_back(p4.second);
 }
 
 void Renderer::createFramebuffers() {
