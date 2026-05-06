@@ -373,11 +373,13 @@ void Renderer::createGraphicalPipeline() {
   pipelineLayout[0].push_back(p1.first);
   pipelineLayout[1].push_back(p2.first);
   pipelineLayout[1].push_back(p3.first);
-  pipelineLayout[2].push_back(p4.first);
+  pipelineLayout[2].push_back(p3.first);
+  pipelineLayout[3].push_back(p4.first);
   graphicsPipeline[0].push_back(p1.second);
   graphicsPipeline[1].push_back(p2.second);
   graphicsPipeline[1].push_back(p3.second);
-  graphicsPipeline[2].push_back(p4.second);
+  graphicsPipeline[2].push_back(p3.second);
+  graphicsPipeline[3].push_back(p4.second);
 }
 
 void Renderer::createFramebuffers() {

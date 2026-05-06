@@ -4,9 +4,13 @@
 #include <cstdint>
 #include <vulkan/vulkan.h>
 #include "vertex.hpp"
+#include "chunk.hpp"
 #include <vector>
 
 class Terrain {
+private:
+  void gridyMesher(const std::vector<Chunk>& chunks);
+
 public:
   VkBuffer vertexBuffer;
   VkDeviceMemory vertexBufferMemory;

@@ -47,14 +47,14 @@ private:
   };
   VkRenderPass renderPass;
   VkDescriptorSetLayout descriptorSetLayout;
-  std::vector<std::vector<VkPipelineLayout>> pipelineLayout = {{}, {}, {}};
+  std::vector<std::vector<VkPipelineLayout>> pipelineLayout = {{}, {}, {}, {}};
   std::vector<VkFramebuffer> swapChainFramebuffers;
   VkCommandPool commandPool;
   std::vector<VkCommandBuffer> commandBuffers = {};
   std::vector<VkSemaphore> imageAvailableSemaphores = {};
   std::vector<VkSemaphore> renderFinishedSemaphores = {};
   std::vector<VkFence> inFlightFences = {};
-  std::vector<std::vector<VkPipeline>> graphicsPipeline = {{}, {}, {}};
+  std::vector<std::vector<VkPipeline>> graphicsPipeline = {{}, {}, {}, {}};
   bool framebufferResized = false;
   std::vector<VkBuffer> uniformBuffers;
   std::vector<VkDeviceMemory> uniformBuffersMemory;

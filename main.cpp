@@ -79,6 +79,7 @@ int main(int argc, char *argv[]) {
       }
       player.handleInput(dt);
 
+      // FIX: textures go uuf when using greedymeshing
       renderer.drawFrame(&player, terrain);
     }
   }
